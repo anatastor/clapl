@@ -17,7 +17,7 @@ char *LOGGER_PATH;
 typedef enum
 {
     LOG_DMSG = 0,
-    LOG_MSG,
+    LOG_MSG = 1,
     LOG_WARNING,
     LOG_ERROR,
     LOG_ERROR_MALLOC,

@@ -60,12 +60,6 @@ typedef struct userinterface
 
     WINDOW *selectedWin;
 
-    int selectedArtist;
-    int selectedAlbum;
-    int selectedTrack;
-
-    int inputType;
-
     cache *c;
 } userinterface;
 

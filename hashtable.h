@@ -8,18 +8,18 @@
 #include <string.h>
 
 
-typedef struct entry
+typedef struct ht_entry
 {   
     char *key;
     char *value;
-    struct entry *next;
-} entry;
+    struct ht_entry *next;
+} ht_entry;
 
 
 typedef struct
 {
     int size;
-    entry **entries;
+    ht_entry **entries;
 } hashtable;
 
 

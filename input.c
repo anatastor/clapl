@@ -8,33 +8,55 @@ void parse_command (char *cmd, userinterface *ui)
     ptr = strtok(cmd, " ");
     ptr = strtok(NULL, " ");
 
-    logcmd(LOG_MSG, "\n%s\n%s", cmd, ptr ? ptr : "NULL");
-
-    if (strcmp(cmd, "create_playlist") == 0)
+    if (strcmp(cmd, "add") == 0)
     {
+        int reload = 0;
         struct entry *e = malloc(sizeof(struct entry));
         e->artist = "Playlists";
-        e->album = ptr;
+        if (db_add_artist(ui->c->db, e))
+            reload = 1;
 
-        e->artist_id = db_add_artist(ui->c->db, e);
-        db_add_album(ui->c->db, e);
-        free(e);
+        e->album = ptr;
+        if(db_add_album(ui->c->db, e))
+            reload = 1;
+        
+        e->number = 0;
+        e->totalnumber = 0;
+        e->title = ui->c->tracks[ui->c->selectedTrack].name;
+        e->file = cache_load_filepath(ui->c);
+        
+        if (db_add_track(ui->c->db, e))
+            reload = 1;
+
+        if (reload)
+        {
+            cache_reload(&ui->c);
+            ui_redraw(ui);
+            ui_refresh(ui);
+        }
         return;
     }
-    
-    if (strcmp(cmd, "add_track") == 0)
+
+    if (strcmp(cmd, "remove") == 0)
     {
-        struct entry *e = malloc(sizeof(struct entry));
-        return;
+        int id = ui->c->tracks[ui->c->selectedTrack].id;
+        cache_remove_track(ui->c, id);
+        ui_print_track(ui);
+        ui_refresh(ui);
+    }
+
+    if (strcmp(cmd, "rmp") == 0)
+    {
+        int id = ui->c->album[ui->c->selectedAlbum].id;
+        cache_remove_album(ui->c, id);
+        ui_print_album(ui);
+        ui_refresh(ui);
     }
     
     if (strcmp(cmd, "load") == 0)
     {
         db_add_dir(ui->c->db, ptr);
-        sqlite3 *db = ui->c->db;
-        cache_close(ui->c);
-        ui->c = cache_load(db);
-        ui->selectedArtist = 0;
+        cache_reload(&ui->c);
         ui_redraw(ui);
         ui_refresh(ui);
         return;
@@ -77,13 +99,14 @@ void *playbackThread (void *vargp)
 }
 
 
-void start_playback (audio *a, cache *c, userinterface *ui, pthread_t *thread)
+void start_playback (audio *a, userinterface *ui, pthread_t *thread)
 {
     logcmd(LOG_DMSG, "input: start_playback: executing");
-    a->pb = playback_open_file(cache_load_filepath(c->db, c->tracks[ui->selectedTrack].id));
+    a->pb = playback_open_file(cache_load_filepath(ui->c));
+    logcmd(LOG_DMSG, "input: start_playback: opened file: %s", a->pb);
     a->playstate = PLAYSTATE_PLAY;
     a->threadstate = THREADSTATE_RUNNING;
-    c->currentTrack = c->tracks[ui->selectedTrack];
+    ui->c->currentTrack = ui->c->tracks[ui->c->selectedTrack];
     ui_print_info(ui, a);
     ui_print_lyrics(ui);
     pthread_create(thread, NULL, playbackThread, a);
@@ -110,22 +133,10 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 timeout(10);
                 move(LINES - 1, 0); // move to the line
                 clrtoeol();         // clear the line
+                ui_print_info(ui, a);
                 refresh();
                 break;
             }
-            /*
-            char msg[255] = "";
-            echo();
-            timeout(-1);
-            refresh();
-            mvprintw(LINES - 1, 0, ":");
-            getstr(msg);
-            logcmd(LOG_DMSG, "Entered MSG: %s", msg);
-            cbreak();
-            noecho();
-            timeout(10);
-            break;
-            */
 
         case 'a': case 'A':
             ui->selectedWin = (ui->selectedWin == ui->artistWin) ? ui->albumWin : ui->artistWin;
@@ -139,16 +150,16 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
         case 'j': case 'J':
             if (ui->selectedWin == ui->artistWin)
             {
-                ui->selectedArtist++;
-                if (ui->selectedArtist == c->nartists)
-                    ui->selectedArtist = 0;
+                ui->c->selectedArtist++;
+                if (ui->c->selectedArtist == ui->c->nartists)
+                    ui->c->selectedArtist = 0;
                 ui_print_artist(ui);
             }
             else if (ui->selectedWin == ui->albumWin)
             {
-                ui->selectedAlbum++;
-                if (ui->selectedAlbum == c->nalbum)
-                    ui->selectedAlbum = 0;
+                ui->c->selectedAlbum++;
+                if (ui->c->selectedAlbum == ui->c->nalbum)
+                    ui->c->selectedAlbum = 0;
                 ui_print_album(ui);
             }
             ui_refresh(ui);
@@ -157,33 +168,33 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
         case 'k': case 'K':
             if (ui->selectedWin == ui->artistWin)
             {
-                ui->selectedArtist--;
-                if (ui->selectedArtist < 0)
-                    ui->selectedArtist = c->nartists - 1;
+                ui->c->selectedArtist--;
+                if (ui->c->selectedArtist < 0)
+                    ui->c->selectedArtist = ui->c->nartists - 1;
                 ui_print_artist(ui);
             }
             else if (ui->selectedWin == ui->albumWin)
             {
-                ui->selectedAlbum--;
-                if (ui->selectedAlbum < 0)
-                    ui->selectedAlbum = c->nalbum - 1;
+                ui->c->selectedAlbum--;
+                if (ui->c->selectedAlbum < 0)
+                    ui->c->selectedAlbum = ui->c->nalbum - 1;
                 ui_print_album(ui);
             }
             ui_refresh(ui);
             break;
 
         case 'n': case 'N':
-            ui->selectedTrack++;
-            if (ui->selectedTrack == c->ntracks)
-                ui->selectedTrack = 0;
+            ui->c->selectedTrack++;
+            if (ui->c->selectedTrack == ui->c->ntracks)
+                ui->c->selectedTrack = 0;
             ui_print_track(ui);
             ui_refresh(ui);
             break;
 
         case 'b': case 'B':
-            ui->selectedTrack--;
-            if (ui->selectedTrack < 0)
-                ui->selectedTrack = c->ntracks - 1;
+            ui->c->selectedTrack--;
+            if (ui->c->selectedTrack < 0)
+                ui->c->selectedTrack = ui->c->ntracks - 1;
             ui_print_track(ui);
             ui_refresh(ui);
             break;
@@ -194,7 +205,7 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 a->threadstate = THREADSTATE_TERMINATE;
                 pthread_join(*thread, NULL); // wait until the thread is terminated
             }
-            start_playback(a, c, ui, thread);
+            start_playback(a, ui, thread);
             ui_refresh(ui);
             break;
 
@@ -228,17 +239,13 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
         case 'r': case 'R':
             // redraw Winows
             {
-                int selectedAlbum = ui->selectedAlbum;
-                int selectedTrack = ui->selectedTrack;
                 endwin();
                 ui_createWindows(ui);
                 ui_redraw(ui);
                 if (a->threadstate == THREADSTATE_RUNNING)
                     ui_print_lyrics(ui);
 
-                ui->selectedAlbum = selectedAlbum;
                 ui_print_album(ui);
-                ui->selectedTrack = selectedTrack;
                 ui_print_track(ui);
                 ui_print_info(ui, a);
                 ui_refresh(ui);
@@ -248,38 +255,36 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
 
     if (a->playstate == PLAYSTATE_NEXT)
     {
-        if (c->tracks[ui->selectedTrack].id == c->currentTrack.id)
+        if (c->tracks[ui->c->selectedTrack].id == c->currentTrack.id)
         {
             switch (a->cycle)
             {
                 case CYCLE_ALL_ARTIST:
-                    if (ui->selectedTrack + 1 < c->ntracks)
-                        ui->selectedTrack++;
+                    if (ui->c->selectedTrack + 1 < c->ntracks)
+                        ui->c->selectedTrack++;
                     else
                     {
-                        ui->selectedAlbum++;
-                        if (ui->selectedAlbum == c->nalbum)
-                            ui->selectedAlbum = 0;
+                        ui->c->selectedAlbum++;
+                        if (ui->c->selectedAlbum == c->nalbum)
+                            ui->c->selectedAlbum = 0;
                         ui_print_album(ui);
                     }
                     break;
 
                 case CYCLE_ALL_ALBUM:
-                    ui->selectedTrack++;
-                    if (ui->selectedTrack == c->ntracks)
-                        ui->selectedTrack = 0;
+                    ui->c->selectedTrack++;
+                    if (ui->c->selectedTrack == c->ntracks)
+                        ui->c->selectedTrack = 0;
                     break;
 
                 case CYCLE_TRACK:
                     break;
             }
-            start_playback(a, c, ui, thread);
+            start_playback(a, ui, thread);
             ui_print_track(ui);
             ui_refresh(ui);
         }
         else
-            start_playback(a, c, ui, thread);
+            start_playback(a, ui, thread);
     }
-
-
 }

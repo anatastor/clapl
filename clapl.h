@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "configparser.h"
 #include "db.h"
 #include "input.h"
 #include "logger.h"

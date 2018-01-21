@@ -14,7 +14,7 @@
 
 
 void *playbackThread (void *vargp);
-void start_playback (audio *a, cache *c, userinterface *ui, pthread_t *thread);
+void start_playback (audio *a, userinterface *ui, pthread_t *thread);
 void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char ch);
 
 #endif

@@ -28,13 +28,13 @@ int ht_init (hashtable *const ht, const int size)
 {
     ht->size = size;
     ht->entries = NULL;
-    ht->entries = malloc(sizeof(entry*) * size);
+    ht->entries = malloc(sizeof(ht_entry*) * size);
     if (! ht->entries)
         exit(1);
 
     for (int i = 0; i < size; i++)
         ht->entries[i] = NULL;
-
+    
     return 1; // success
 }
 
@@ -55,9 +55,9 @@ int ht_hash (hashtable *const ht, char *const key)
 }
 
 
-entry *ht_pair (char *const key, char *const value)
+ht_entry *ht_pair (char *const key, char *const value)
 {
-    entry *e = malloc(sizeof(entry));
+    ht_entry *e = malloc(sizeof(ht_entry));
     if (! e)
         exit(1);
     
@@ -83,7 +83,7 @@ int ht_set (hashtable *const ht, char *const key, char *const value)
         return 1;
     }
     
-    entry *next = ht->entries[h];
+    ht_entry *next = ht->entries[h];
     while (next && next->next && next->key && strcmp(next->key, key) != 0)
         next = next->next;
     
@@ -99,7 +99,7 @@ int ht_set (hashtable *const ht, char *const key, char *const value)
 char *ht_get (hashtable *const ht, char *const key)
 {
     int h = ht_hash(ht, key);
-    entry *e = ht->entries[h];
+    ht_entry *e = ht->entries[h];
     if (! e)
         return NULL;
 

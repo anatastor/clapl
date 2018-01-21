@@ -26,17 +26,26 @@ typedef struct cache
     int nalbum;
     int ntracks;
 
-    cache_entry currentTrack;
+    int selectedArtist;
+    int selectedAlbum;
+    int selectedTrack;
+
+    cache_entry currentTrack; // track which is currently playing
     
     char *lyrics_path;
 } cache;
 
 
 cache *cache_load (sqlite3 *db);
-cache_entry *cache_entry_load_artists (sqlite3 *db, int *nartists);
-cache_entry *cache_entry_load_album (sqlite3 *db, int *nalbum, int artist_id);
-cache_entry *cache_entry_load_track (sqlite3 *db, int *ntacks, int album_id, int artist_id);
-char *cache_load_filepath (sqlite3 *db, int track_id);
+void cache_reload (cache **c);
+
+void cache_entry_load_artists (cache *c);
+void cache_entry_load_album (cache *c);
+void cache_entry_load_tracks (cache *c);
+char *cache_load_filepath (cache *c);
+
+void cache_remove_album (cache *c, int id);
+void cache_remove_track (cache *c, int id);
 
 void cache_close (cache *c);
 

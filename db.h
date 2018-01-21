@@ -12,7 +12,7 @@
 #include "logger.h"
 
 
-#define DB_NAME "music_db"
+#define DB_NAME ".config/clapl/music_db"
 
 
 #define CHECK_ARTIST    "SELECT id FROM artist WHERE name=\"%s\";"
@@ -21,7 +21,7 @@
 
 #define INSERT_ARTIST   "INSERT INTO artist(id, name) VALUES(NULL, \"%s\");"
 #define INSERT_ALBUM    "INSERT INTO album(id, name, artist_id) VALUES(NULL, \"%s\", %i);"
-#define INSERT_TRACK    "INSERT INTO track(id, title, playlist, number, total_number, artist_id, album_id, path) VALUES(NULL, \"%s\", 0, %i, %i, %i, %i, \"%s\");"
+#define INSERT_TRACK    "INSERT INTO track(id, title, number, total_number, artist_id, album_id, path) VALUES(NULL, \"%s\", %i, %i, %i, %i, \"%s\");"
 
 
 
@@ -42,8 +42,14 @@ struct entry
 
 sqlite3 *db_init (void);
 
-int db_add_artist (sqlite3 *db, const struct entry *e);
-int db_add_album (sqlite3 *db, const struct entry *e);
+int db_add_artist (sqlite3 *db, struct entry *e);
+/*
+ * return
+ * 1 if artists was added
+ * 0 if not
+ */
+int db_add_album (sqlite3 *db, struct entry *e);
+int db_add_track (sqlite3 *db, struct entry *e);
 
 int db_add_dir (sqlite3 *db, const char *path);
 int db_add_file (sqlite3 *db, const char *file);

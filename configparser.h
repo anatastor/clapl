@@ -28,6 +28,8 @@ typedef struct
 
 void configparser_init (configparser *const cp, char *const file, const int size, const char delimiter);
 
+void configparser_init_file (configparser *const cp, FILE *file, const int size, const char delimiter);
+
 void configparser_load (configparser *const cp);
 
 char *configparser_split_string (char *const string, const char delimiter);

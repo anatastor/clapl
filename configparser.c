@@ -45,9 +45,15 @@ void configparser_init (configparser *const cp, char *const file, const int size
         logcmd(LOG_ERROR_MALLOC, "configparser: configparser_init: could not malloc cp->file");
 
     cp->delimiter = delimiter;
-
-    logcmd(LOG_DMSG, "configparser: configparser_init: configparser was initalized");
     ht_init (&cp->ht, size); // create hash table
+}
+
+
+void configparser_init_file (configparser *const cp, FILE *file, const int size, const char delimiter)
+{
+    cp->file = file;
+    cp->delimiter = delimiter;
+    ht_init(&cp->ht, size);
 }
 
 

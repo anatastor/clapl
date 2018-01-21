@@ -28,7 +28,6 @@ sqlite3 *db_init (void)
     sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS  \
             track(id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \
                 title TEXT NOT NULL, \
-                playlist INTEGER, \
                 number INTEGER, \
                 total_number INTEGER, \
                 artist_id INTEGER NOT NULL, \
@@ -127,6 +126,7 @@ int db_add_dir (sqlite3 *db, const char *path)
     else
         logcmd(LOG_MSG, "could not open directory: %s", path);
     
+    closedir(dir);
 
     return 1;
 }
@@ -221,7 +221,7 @@ int db_check_track (sqlite3 *db, const struct entry *e)
 }
 
 
-int db_add_artist (sqlite3 *db, const struct entry *e)
+int db_add_artist (sqlite3 *db, struct entry *e)
 {
     // add the artist to the database
     logcmd(LOG_DMSG, "adding artist: %s", e->artist);
@@ -230,7 +230,8 @@ int db_add_artist (sqlite3 *db, const struct entry *e)
     if ((artist_id = db_check_artist(db, e)))
     {
         logcmd(LOG_DMSG, "artist exists");
-        return artist_id;
+        e->artist_id = artist_id;
+        return 0;
     }
     else
     {
@@ -247,14 +248,15 @@ int db_add_artist (sqlite3 *db, const struct entry *e)
         free(sql);
         free(err);
 
-        return sqlite3_last_insert_rowid(db);
+        e->artist_id = sqlite3_last_insert_rowid(db);
+        return 1;
     }
 
     return 0;
 }
 
 
-int db_add_album (sqlite3 *db, const struct entry *e)
+int db_add_album (sqlite3 *db, struct entry *e)
 {
     // add the album to the database
     logcmd(LOG_DMSG, "adding album: %s", e->album);
@@ -263,7 +265,8 @@ int db_add_album (sqlite3 *db, const struct entry *e)
     if ((album_id = db_check_album(db, e)))
     {
         logcmd(LOG_DMSG, "album exists");
-        return album_id;
+        e->album_id = album_id;
+        return 0;
     }
     else
     {
@@ -280,14 +283,15 @@ int db_add_album (sqlite3 *db, const struct entry *e)
         free(sql);
         free(err);
 
-        return sqlite3_last_insert_rowid(db);
+        e->album_id = sqlite3_last_insert_rowid(db);
+        return 1;
     }
 
     return 0;
 }
 
 
-int db_add_track (sqlite3 *db, const struct entry *e)
+int db_add_track (sqlite3 *db, struct entry *e)
 {
     // add the track to the database
     logcmd(LOG_DMSG, "adding track: %s", e->title);
@@ -296,7 +300,8 @@ int db_add_track (sqlite3 *db, const struct entry *e)
     if (db_check_track(db, e) == -2)
     {
         logcmd(LOG_MSG, "title does already exist: %s", e->title);
-        return -2;
+        //return -2;
+        return 0;
     }
     else
     {
@@ -307,14 +312,14 @@ int db_add_track (sqlite3 *db, const struct entry *e)
         if (! sql)
             logcmd(LOG_ERROR_MALLOC, "db: db_add_track: unable to allocate memory for sql");
         snprintf(sql, size, INSERT_TRACK, e->title, e->number, e->totalnumber, e->artist_id, e->album_id, e->file);
-        logcmd(LOG_DMSG, "sql: %s", sql);
         if (sqlite3_exec(db, sql, NULL, 0, &err) != SQLITE_OK)
             logcmd(LOG_ERROR, "SQL ERROR: %i", err);
 
         free(sql);
         free(err);
 
-        return sqlite3_last_insert_rowid(db);
+        //return sqlite3_last_insert_rowid(db);
+        return 1;
     }
 
     return 0;
@@ -329,26 +334,10 @@ int db_add_file (sqlite3 *db, const char *file)
     struct entry *e = db_load_entry_from_file(file);
     if (! e)
         return 0; // file was not loaded
-
-    if (! (e->artist_id = db_add_artist(db, e)))
-    {
-        free(e);
-        return 0;
-    }
-    if (! (e->album_id = db_add_album(db, e)))
-    {
-        free(e);
-        return 0;
-    }
-
-    int res = db_add_track(db, e);
-    if (res == -2)
-        return -2;
-    else if (! res)
-    {
-        free(e);
-        return 0;
-    }
+    
+    db_add_artist(db, e);
+    db_add_album(db, e);
+    db_add_track(db, e);
 
     free(e);
     return 1; // file was added to the database

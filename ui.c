@@ -80,9 +80,7 @@ userinterface *ui_create (cache *c)
     ui_createWindows(ui);
 
     ui->c = c;
-    ui->selectedArtist = 0;
-
-    ui->inputType = INPUT_DEFAULT;
+    //ui->selectedArtist = 0;
     
     ui_redraw(ui);
     
@@ -118,14 +116,16 @@ void ui_print_to_window (WINDOW *win, const int width, const int line, const cha
 void ui_print_artist (userinterface *ui)
 {
     ui_clear_window(ui, ui->artistWin, "Artist");
+    if (ui->c->selectedArtist == -1)
+        return;
 
     int offset =  0;
-    if (ui->selectedArtist > (ARTISTWIN_HEIGHT - 4))
-        offset = ui->selectedArtist - (ARTISTWIN_HEIGHT - 4);
+    if (ui->c->selectedArtist > (ARTISTWIN_HEIGHT - 4))
+        offset = ui->c->selectedArtist - (ARTISTWIN_HEIGHT - 4);
     
     for (int i = 1; (i < (ARTISTWIN_HEIGHT - 2)) && (i <= ui->c->nartists); i++)
     {   
-        if ((i + offset - 1) == ui->selectedArtist)
+        if ((i + offset - 1) == ui->c->selectedArtist)
         {
             wattron(ui->artistWin, A_STANDOUT);
             ui_print_to_window(ui->artistWin, (ARTISTWIN_WIDTH - 1), i, ui->c->artists[i + offset - 1].name);
@@ -135,11 +135,8 @@ void ui_print_artist (userinterface *ui)
             ui_print_to_window(ui->artistWin, (ARTISTWIN_WIDTH - 2), i, ui->c->artists[i + offset - 1].name);
     }
     
-    if (ui->c->album)
-        free(ui->c->album);
-    ui->c->album = cache_entry_load_album(ui->c->db, &ui->c->nalbum, ui->c->artists[ui->selectedArtist].id);
+    cache_entry_load_album(ui->c);
     
-    ui->selectedAlbum = 0;
     ui_print_album(ui);
 }
 
@@ -149,12 +146,12 @@ void ui_print_album (userinterface *ui)
     ui_clear_window(ui, ui->albumWin, "Album");
 
     int offset = 0;
-    if (ui->selectedAlbum > (ALBUMWIN_HEIGHT - 4))
-        offset = ui->selectedAlbum - (ALBUMWIN_HEIGHT - 4);
+    if (ui->c->selectedAlbum > (ALBUMWIN_HEIGHT - 4))
+        offset = ui->c->selectedAlbum - (ALBUMWIN_HEIGHT - 4);
 
     for (int i = 1; (i < (ALBUMWIN_HEIGHT -2)) && (i <= ui->c->nalbum); i++)
     {   
-        if ((i + offset - 1) == ui->selectedAlbum)
+        if ((i + offset - 1) == ui->c->selectedAlbum)
         {
             wattron(ui->albumWin, A_STANDOUT);
             ui_print_to_window(ui->albumWin, (ALBUMWIN_WIDTH - 2), i, ui->c->album[i + offset - 1].name);
@@ -164,11 +161,8 @@ void ui_print_album (userinterface *ui)
             ui_print_to_window(ui->albumWin, (ALBUMWIN_WIDTH - 2), i, ui->c->album[i + offset -1].name);
     }
 
-    if (ui->c->tracks)
-        free(ui->c->tracks);
-    ui->c->tracks = cache_entry_load_track(ui->c->db, &ui->c->ntracks, ui->c->album[ui->selectedAlbum].id, ui->c->artists[ui->selectedArtist].id);
+    cache_entry_load_tracks(ui->c);
     
-    ui->selectedTrack = 0;
     ui_print_track(ui);
 }
 
@@ -178,15 +172,15 @@ void ui_print_track (userinterface *ui)
     ui_clear_window(ui, ui->trackWin, "Track");
 
     int offset = 0;
-    if (ui->selectedTrack > (TRACKWIN_HEIGHT - 4))
-        offset = ui->selectedTrack - (TRACKWIN_HEIGHT - 4);
+    if (ui->c->selectedTrack > (TRACKWIN_HEIGHT - 4))
+        offset = ui->c->selectedTrack - (TRACKWIN_HEIGHT - 4);
 
     for (int i = 1; (i < (TRACKWIN_HEIGHT - 2)) && (i <= ui->c->ntracks); i++)
     {   
-        if ((i + offset - 1) == ui->selectedTrack)
+        if ((i + offset - 1) == ui->c->selectedTrack)
         {
             wattron(ui->trackWin, A_STANDOUT);
-            ui_print_to_window(ui->trackWin, (TRACKWIN_WIDTH - 1), i, ui->c->tracks[ui->selectedTrack].name);
+            ui_print_to_window(ui->trackWin, (TRACKWIN_WIDTH - 1), i, ui->c->tracks[ui->c->selectedTrack].name);
             wattroff(ui->trackWin, A_STANDOUT);
         }
         else
@@ -253,6 +247,7 @@ void ui_print_lyrics (userinterface *ui)
 //void ui_print_info (userinterface *ui, const int threadstate, const int playstate, const int cycle)
 void ui_print_info (userinterface *ui, audio *a)
 {
+    logcmd(LOG_DMSG, "ui_print_inof: executing");
     ui_clear_window(ui, ui->infoWin, NULL);
     switch (a->playstate)
     {
@@ -283,4 +278,5 @@ void ui_print_info (userinterface *ui, audio *a)
             mvwprintw(ui->infoWin, 2, 1, "repeat track");
             break;
     }
+    wrefresh(ui->infoWin);
 }
