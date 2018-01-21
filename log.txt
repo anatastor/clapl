@@ -1,0 +1,4 @@
+[MSG] file opened
+[DEBUG MSG] playback initialized
+[DEBUG MSG] db: db_init: db initialized
+[DEBUG MSG] cache: cache_load_artists: database is emptry
