@@ -43,7 +43,10 @@ int is_supported_audio_file (const char *file)
 {
     char *end = strrchr(file, '.');
     if (!end)
-        logcmd(LOG_ERROR_MALLOC, "db: is_supported_audio_file: could not malloc end");
+    {
+        logcmd(LOG_DMSG, "db: is_supported_audio_file: could not malloc end");
+        return 0;
+    }
 
     const char *supported[] = {
         ".ogg",
@@ -78,6 +81,11 @@ int db_add_dir (sqlite3 *db, const char *path)
 
     if ((dir = opendir(path)))
     {
+        if (ent)
+        {
+            free(ent);
+            ent = NULL;
+        }
         while ((ent = readdir(dir)))
         {
             if (ent->d_type == DT_DIR)
@@ -106,17 +114,6 @@ int db_add_dir (sqlite3 *db, const char *path)
                     snprintf(file, size, "%s%s", path, ent->d_name);
                     int result = db_add_file(db, file);
 
-                    switch (result)
-                    {
-                        case -2: // file already in database
-                            break;
-
-                        case 1: // file was added
-                            break;
-
-                        case 0: // file was not added
-                            break;
-                    }
                     free (file);
                 }
             }
@@ -339,13 +336,21 @@ int db_add_file (sqlite3 *db, const char *file)
     db_add_album(db, e);
     db_add_track(db, e);
 
+    if (e->artist)
+        free(e->artist);
+    if (e->album)
+        free(e->album);
+    if (e->title)
+        free(e->title);
+    if (e->file)
+        free(e->file);
     free(e);
     return 1; // file was added to the database
 }
 
 
 char *load_entry_string (const char *value)
-{
+{   
     //logcmd(LOG_DMSG, "tag->value: %s", value);
     // copys the content of "value" into a new string
     char *ptr = malloc(sizeof(char) * (strlen(value) + 1));

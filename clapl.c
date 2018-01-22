@@ -36,11 +36,9 @@ int main (int argc, char **argv)
     cache *c = cache_load(db);
     c->lyrics_path = "/home/mjoelnir/Music/Lyrics/";
     */
-
-
+    
     ui_init();
     userinterface *ui = ui_create(cache_load(db));
-    //ui->c->lyrics_path = "/home/mjoelnir/Music/Lyrics/";
     ui->c->lyrics_path = configparser_get_string(&cp, "lyrics");
 
     audio *a = malloc(sizeof(audio));
