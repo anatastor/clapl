@@ -4,9 +4,7 @@
 
 void parse_command (char *cmd, userinterface *ui)
 {
-    char *ptr;
-    ptr = strtok(cmd, " ");
-    ptr = strtok(NULL, " ");
+    char *ptr = configparser_split_string(cmd, ' ');
 
     if (strcmp(cmd, "add") == 0)
     {
@@ -28,7 +26,8 @@ void parse_command (char *cmd, userinterface *ui)
         if (db_add_track(ui->c->db, e))
             reload = 1;
 
-        if (reload)
+
+        if (reload && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
         {
             cache_reload(&ui->c);
             ui_redraw(ui);
@@ -45,7 +44,7 @@ void parse_command (char *cmd, userinterface *ui)
         ui_refresh(ui);
     }
 
-    if (strcmp(cmd, "rmp") == 0)
+    if (strcmp(cmd, "rmp") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
     {
         int id = ui->c->album[ui->c->selectedAlbum].id;
         cache_remove_album(ui->c, id);
@@ -90,10 +89,10 @@ void *playbackThread (void *vargp)
         return NULL;
 
     logcmd(LOG_DMSG, "input: playbackThread: terminating thread");
+    a->threadstate = THREADSTATE_FINISHED;
     playback_free_file(a->pb);
     free(a->pb);
     a->pb = NULL;
-    a->threadstate = THREADSTATE_FINISHED;
     a->playstate = PLAYSTATE_NEXT;
     return NULL;
 }
@@ -115,7 +114,13 @@ void start_playback (audio *a, userinterface *ui, pthread_t *thread)
 
 
 void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char ch)
-{
+{   
+    if (a && a->threadstate == THREADSTATE_RUNNING && a->playstate == PLAYSTATE_PLAY)
+        mvprintw(3, 2, "%i | %i",
+                //av_frame_get_best_effort_timestamp(a->pb->frame) * (a->pb->ctx->streams[0]->time_base.num / a->pb->ctx->streams[0]->time_base.den),
+                av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den,
+                a->pb->ctx->duration / AV_TIME_BASE);
+
     switch (ch)
     {
         case ':': case 27:

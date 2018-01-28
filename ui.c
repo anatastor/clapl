@@ -71,7 +71,7 @@ void ui_createWindows (userinterface *ui)
 }
 
 
-userinterface *ui_create (cache *c)
+userinterface *ui_create (sqlite3 *db, configparser *cp)
 {
     userinterface *ui = malloc(sizeof(userinterface));
     if (! ui)
@@ -79,8 +79,11 @@ userinterface *ui_create (cache *c)
 
     ui_createWindows(ui);
 
-    ui->c = c;
-    //ui->selectedArtist = 0;
+    ui->c = cache_load(db);
+    ui->c->lyrics_path = configparser_get_string(cp, "lyrics");
+    ui->c->sorting = configparser_get_string(cp, "sorting");
+
+    cache_entry_load_artists(ui->c);
     
     ui_redraw(ui);
     

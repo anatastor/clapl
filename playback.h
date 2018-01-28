@@ -46,7 +46,6 @@ typedef struct audio
 } audio;
 
 
-
 void playback_init (void);
 
 playback *playback_open_file (const char *path);

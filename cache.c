@@ -21,18 +21,21 @@ static int size_callback (void *data, int argc, char **argv, char **azColName)
 cache *cache_load (sqlite3 *db)
 {
     cache *c = malloc(sizeof(cache));
-
+    if (!c)
+        logcmd(LOG_ERROR_MALLOC, "cache: cache_load: unable to allocate memory for cache");
+    
+    // initialize values
     c->artists = NULL;
     c->album = NULL;
     c->tracks = NULL;
     c->lyrics_path = NULL;
-
+    c->sorting = "number";
     c->selectedArtist = -1;
     c->selectedAlbum = -1;
     c->selectedTrack = -1;
-
     c->currentTrack.id = -1;
     c->currentTrack.name = "";
+
 
     c->db = db;
     cache_entry_load_artists(c);
@@ -49,12 +52,18 @@ void cache_reload (cache **c)
     int size = snprintf(NULL, 0, cc->lyrics_path);
     char *path = malloc(sizeof(char) * size);
     strcpy(path, cc->lyrics_path);
+
+    size = snprintf(NULL, 0, cc->sorting);
+    char *sort = malloc(sizeof(char) * size);
+    strcpy(sort, cc->sorting);
+
     struct cache_entry e = cc->currentTrack;
     sqlite3 *db = cc->db;
     cache_close(*c);
     *c = cache_load(db);
     cc = *c;
     cc->lyrics_path = path;
+    cc->sorting = sort;
     cc->currentTrack = e;
 }
 
@@ -174,13 +183,15 @@ void cache_entry_load_tracks (cache *c)
     sqlite3_stmt *res;
     const char *tail = NULL;
 
-    size = snprintf(NULL, 0, "SELECT title, id FROM track WHERE album_id=%i AND artist_id=%i ORDER BY number;",
+    size = snprintf(NULL, 0, "SELECT title, id FROM track WHERE album_id=%i AND artist_id=%i ORDER BY %s;",
             c->album[c->selectedAlbum].id,
-            c->artists[c->selectedArtist].id);
+            c->artists[c->selectedArtist].id,
+            c->sorting);
     sql = realloc(sql, sizeof(char) * size);
-    snprintf(sql, size, "SELECT title, id FROM track WHERE album_id=%i AND artist_id=%i ORDER BY number;",
+    snprintf(sql, size, "SELECT title, id FROM track WHERE album_id=%i AND artist_id=%i ORDER BY %s;",
             c->album[c->selectedAlbum].id,
-            c->artists[c->selectedArtist].id);
+            c->artists[c->selectedArtist].id,
+            c->sorting);
     
     int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
     
@@ -257,5 +268,9 @@ void cache_close (cache *c)
         free(c->album);
     if (c->tracks)
         free(c->tracks);
+    if (c->lyrics_path)
+        free(c->lyrics_path);
+    if (c->sorting)
+        free(c->sorting);
     free(c);
 }

@@ -77,7 +77,9 @@ void configparser_load (configparser *const cp)
 
 char *configparser_split_string (char *const string, const char delimiter)
 {
-    char *new = strrchr(string, delimiter);
+    char *new = strchr(string, delimiter);
+    if (!new)
+        return NULL;
     *new = '\0';
     return ++new;
 }

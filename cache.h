@@ -22,21 +22,23 @@ typedef struct cache
     cache_entry *album;
     cache_entry *tracks;
 
-    int nartists;
-    int nalbum;
-    int ntracks;
+    int nartists;   // number of artists loaded
+    int nalbum;     // number of albums loaded
+    int ntracks;    // number of tracks loaded
 
     int selectedArtist;
     int selectedAlbum;
     int selectedTrack;
 
     cache_entry currentTrack; // track which is currently playing
-    
+
+    char *sorting;
     char *lyrics_path;
 } cache;
 
 
 cache *cache_load (sqlite3 *db);
+// loading the cache 
 void cache_reload (cache **c);
 
 void cache_entry_load_artists (cache *c);

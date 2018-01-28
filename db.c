@@ -33,6 +33,11 @@ sqlite3 *db_init (void)
                 artist_id INTEGER NOT NULL, \
                 album_id INTEGER NOT NULL, \
                 path TEXT NOT NULL);", NULL, 0, NULL);
+
+    struct entry e;
+    e.artist = "Playlists";
+    db_add_artist(db, &e);
+
     
     logcmd(LOG_DMSG, "db: db_init: db initialized");
     return db;

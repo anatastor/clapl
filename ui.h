@@ -5,10 +5,12 @@
 #include <curses.h>
 #include <locale.h>
 #include <string.h>
+#include <sqlite3.h>
 
 #include "enums.h"
 #include "logger.h"
 #include "cache.h"
+#include "configparser.h"
 #include "playback.h"
 
 
@@ -72,7 +74,7 @@ WINDOW *win_create (const int x, const int y, const int width, const int height)
 void ui_clear_window (userinterface *ui, WINDOW *win, const char *string);
 void ui_createWindows (userinterface *ui);
 
-userinterface *ui_create (cache *c);
+userinterface *ui_create (sqlite3 *db, configparser *cp);
 
 void ui_refresh (userinterface *ui);
 
