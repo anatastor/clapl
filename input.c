@@ -165,13 +165,6 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
 
     switch (ch)
     {
-        case 'g':
-            {
-                int64_t npos = av_frame_get_best_effort_timestamp(a->pb->frame) + 10 * a->pb->ctx->streams[0]->time_base.den;
-                av_seek_frame(a->pb->ctx, 0, npos, 0);
-                break;
-            }
-
         case ':': case 27:
             {
                 char msg[255] = "";
