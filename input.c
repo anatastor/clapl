@@ -2,7 +2,7 @@
 #include "input.h"
 
 
-void parse_command (char *cmd, userinterface *ui)
+void parse_command (char *cmd, userinterface *ui, audio *a)
 {
     char *ptr = configparser_split_string(cmd, ' ');
 
@@ -36,12 +36,28 @@ void parse_command (char *cmd, userinterface *ui)
         return;
     }
 
-    if (strcmp(cmd, "remove") == 0)
+    if (strcmp(cmd, "goto") == 0)
+    {
+        if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
+        {
+            int x = atoi(ptr);
+            int duration = a->pb->ctx->duration / AV_TIME_BASE;
+            if (x != 0 && x < duration)
+            {
+                int64_t npos = x * a->pb->ctx->streams[0]->time_base.den;
+                av_seek_frame(a->pb->ctx, 0, npos, 0);
+            }
+        }
+        return;
+    }
+
+    if (strcmp(cmd, "rm") == 0)
     {
         int id = ui->c->tracks[ui->c->selectedTrack].id;
         cache_remove_track(ui->c, id);
         ui_print_track(ui);
         ui_refresh(ui);
+        return;
     }
 
     if (strcmp(cmd, "rmp") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
@@ -50,6 +66,7 @@ void parse_command (char *cmd, userinterface *ui)
         cache_remove_album(ui->c, id);
         ui_print_album(ui);
         ui_refresh(ui);
+        return;
     }
     
     if (strcmp(cmd, "load") == 0)
@@ -113,16 +130,48 @@ void start_playback (audio *a, userinterface *ui, pthread_t *thread)
 }
 
 
+char *input_get_time (int t)
+{
+    int s = t % 60;
+    int m = (t / 60) % 60;
+    int h = (t / 60) / 60;
+    char *out = malloc(sizeof(char) * 9);
+    out[0] = h / 10 + 48;
+    out[1] = h % 10 + 48;
+    out[2] = ':';
+    out[3] = m / 10 + 48;
+    out[4] = m % 10 + 48;
+    out[5] = ':';
+    out[6] = s / 10 + 48;
+    out[7] = s % 10 + 48;
+    out[8] = '\0';
+    logcmd(LOG_MSG, "%i: %s", t, out);
+    return out;
+}
+
+
 void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char ch)
 {   
-    if (a && a->threadstate == THREADSTATE_RUNNING && a->playstate == PLAYSTATE_PLAY)
-        mvprintw(3, 2, "%i | %i",
-                //av_frame_get_best_effort_timestamp(a->pb->frame) * (a->pb->ctx->streams[0]->time_base.num / a->pb->ctx->streams[0]->time_base.den),
-                av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den,
-                a->pb->ctx->duration / AV_TIME_BASE);
+    if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
+    {
+        int duration = a->pb->ctx->duration / AV_TIME_BASE;
+        int pos = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
+        char *spos = input_get_time(pos);
+        char *sdur = input_get_time(duration);
+        mvprintw(3, 2, "%s | %s", spos, sdur);
+        free(spos);
+        free(sdur);
+    }
 
     switch (ch)
     {
+        case 'g':
+            {
+                int64_t npos = av_frame_get_best_effort_timestamp(a->pb->frame) + 10 * a->pb->ctx->streams[0]->time_base.den;
+                av_seek_frame(a->pb->ctx, 0, npos, 0);
+                break;
+            }
+
         case ':': case 27:
             {
                 char msg[255] = "";
@@ -132,7 +181,7 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 mvprintw(LINES - 1, 0, ":");
                 getstr(msg);
                 logcmd(LOG_MSG, "Entered MSG: %s", msg);
-                parse_command(msg, ui);
+                parse_command(msg, ui, a);
                 cbreak();
                 noecho();
                 timeout(10);
