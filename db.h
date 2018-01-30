@@ -43,21 +43,27 @@ sqlite3 *db_init (void);
 
 int db_add_artist (sqlite3 *db, struct entry *e);
 /*
- * return
- * 1 if artists was added
- * 0 if not
+ * add artist to database
+ * return 1 if artists was added, 0 if it wasn't added
  */
+
 int db_add_album (sqlite3 *db, struct entry *e);
+/**
+ * add a album to the database
+ * return 1 on success, 0 if it wasn't added
+ */
+
 int db_add_track (sqlite3 *db, struct entry *e);
+/*
+ * add track into the database
+ * return 1 on success, 0 if track wasn't added
+ */
 
-int db_add_dir (sqlite3 *db, const char *path);
-int db_add_file (sqlite3 *db, const char *file);
+int db_add_dir (sqlite3 *db, const char *path); // load a directory into the database
+int db_add_file (sqlite3 *db, const char *file); // load a file into the database
 
-struct entry *db_load_entry_from_file (const char *file);
+struct entry *db_load_entry_from_file (const char *file); // create struct entry from the given file
 
-void db_close (sqlite3 *db);
-
-
-
+void db_close (sqlite3 *db); // close the database and free memory
 
 #endif

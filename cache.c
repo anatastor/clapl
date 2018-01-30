@@ -4,6 +4,7 @@
 
 char *copy_string (const char *value)
 {
+    // copies a string into a new space of memory
     char *ptr = malloc(sizeof(char) * (strlen(value) + 1));
     strcpy(ptr, value);
     return ptr;
@@ -11,7 +12,8 @@ char *copy_string (const char *value)
 
 
 static int size_callback (void *data, int argc, char **argv, char **azColName)
-{
+{   
+    // callback for sqlite3 methods
     int *int_data = (int*) data;
     *int_data = atoi(argv[0]);
     return 0;
@@ -36,7 +38,6 @@ cache *cache_load (sqlite3 *db)
     c->currentTrack.id = -1;
     c->currentTrack.name = "";
 
-
     c->db = db;
     cache_entry_load_artists(c);
     
@@ -49,10 +50,12 @@ void cache_reload (cache **c)
 {   
     logcmd(LOG_DMSG, "cache_reload: executing");
     cache *cc = *c;
+    // copy the path to the lyrics
     int size = snprintf(NULL, 0, cc->lyrics_path);
     char *path = malloc(sizeof(char) * size);
     strcpy(path, cc->lyrics_path);
-
+    
+    // copy the sorting option
     size = snprintf(NULL, 0, cc->sorting);
     char *sort = malloc(sizeof(char) * size);
     strcpy(sort, cc->sorting);
@@ -62,8 +65,8 @@ void cache_reload (cache **c)
     cache_close(*c);
     *c = cache_load(db);
     cc = *c;
-    cc->lyrics_path = path;
-    cc->sorting = sort;
+    cc->lyrics_path = path; // put path to lyrics back into the new cache
+    cc->sorting = sort; // put sorting option back into the new cache
     cc->currentTrack = e;
 }
 
@@ -71,6 +74,7 @@ void cache_reload (cache **c)
 void cache_entry_load_artists (cache *c)
 {
     char *err = NULL;
+    // get number of artists in the database
     if (sqlite3_exec(c->db, "SELECT COUNT(*) FROM artist;", size_callback, &c->nartists, &err) != SQLITE_OK)
         logcmd(LOG_ERROR, "cache: cache_load_artists: SQL ERROR: %i", err);
     
@@ -80,6 +84,7 @@ void cache_entry_load_artists (cache *c)
         return;
     }
     
+    // create array of artists
     cache_entry *artists = malloc(sizeof(cache_entry) * c->nartists);
     if (! artists)
         logcmd(LOG_ERROR_MALLOC, "cache: cache_load_artists: unable to allocate memory for artists");
@@ -88,7 +93,8 @@ void cache_entry_load_artists (cache *c)
     const char *tail = NULL;
     int error;
     error = sqlite3_prepare_v2(c->db, "SELECT name, id FROM artist ORDER BY name;", 1000, &res, &tail);
-
+    
+    // fill array of artists with values from the database
     int count = 0;
     while (sqlite3_step(res) == SQLITE_ROW)
     {
@@ -121,9 +127,11 @@ void cache_entry_load_album (cache *c)
     snprintf(sql, size, "SELECT COUNT(*) FROM album WHERE artist_id=%i;",
             c->artists[c->selectedArtist].id);
     
+    // get number of albums of the artist with 'id' in the database
     if (sqlite3_exec(c->db, sql, size_callback, &c->nalbum, &err) != SQLITE_OK)
         logcmd(LOG_ERROR, "cache: cache_load_album: SQL ERROR: %i", err);
-
+    
+    // allocate memory album array
     cache_entry *album = malloc(sizeof(cache_entry) * c->nalbum);
     if (! album)
         logcmd(LOG_ERROR_MALLOC, "cache: cache_entry_load_album: unalbe to allocate memory for album");
@@ -138,6 +146,7 @@ void cache_entry_load_album (cache *c)
             c->artists[c->selectedArtist].id);
     int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
 
+    // fill album array
     int count = 0;
     while (sqlite3_step(res) == SQLITE_ROW)
     {
@@ -172,7 +181,8 @@ void cache_entry_load_tracks (cache *c)
     snprintf(sql, size, "SELECT COUNT(*) FROM track WHERE album_id=%i AND artist_id=%i;",
             c->album[c->selectedAlbum].id,
             c->artists[c->selectedArtist].id);
-
+    
+    // get number of tracks 
     if (sqlite3_exec(c->db, sql, size_callback, &c->ntracks, &err) != SQLITE_OK)
         logcmd(LOG_ERROR, "cache: cache_entry_load_track: SQL ERROR: %i", err);
 
@@ -195,6 +205,7 @@ void cache_entry_load_tracks (cache *c)
     
     int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
     
+    // fill track array
     int count = 0;
     while (sqlite3_step(res) == SQLITE_ROW)
     {
@@ -222,9 +233,7 @@ char *cache_load_filepath (cache *c)
     const char *tail = NULL;
     int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
     if (sqlite3_step(res) == SQLITE_ROW)
-    {
         string = copy_string(sqlite3_column_text(res, 0));
-    }
 
     free(sql);
     return string;
@@ -234,9 +243,7 @@ char *cache_load_filepath (cache *c)
 void cache_remove_album (cache *c, int id)
 {
     for (int i = 0; i < c->ntracks; i++)
-    {
         cache_remove_track(c, c->tracks[i].id);
-    }
 
     int size = snprintf(NULL, 0, "DELETE FROM album WHERE id=%i;", id);
     char *sql = malloc(sizeof(char) * size);
@@ -262,6 +269,7 @@ void cache_close (cache *c)
 {
     c->currentTrack.name = NULL;
     c->currentTrack.id = -1;
+    // close members of cache
     if (c->artists)
         free(c->artists);
     if (c->album)

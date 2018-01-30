@@ -18,9 +18,9 @@ typedef struct cache
 {
     sqlite3 *db;
 
-    cache_entry *artists;
-    cache_entry *album;
-    cache_entry *tracks;
+    cache_entry *artists; // array of artists
+    cache_entry *album; // array of albums
+    cache_entry *tracks; // array of tracks
 
     int nartists;   // number of artists loaded
     int nalbum;     // number of albums loaded
@@ -32,23 +32,30 @@ typedef struct cache
 
     cache_entry currentTrack; // track which is currently playing
 
-    char *sorting;
-    char *lyrics_path;
+    char *sorting; // options defining the sorting behaviour
+    char *lyrics_path; // path to the lyrics
 } cache;
 
-
+/*
+ * initialize and load the cache
+ * param[in] pointer to the sqlite3 database
+ * returns pointer to the initialized cache or NULL on failure
+ */
 cache *cache_load (sqlite3 *db);
-// loading the cache 
+
+/*
+ * reloads the cache
+ */
 void cache_reload (cache **c);
 
-void cache_entry_load_artists (cache *c);
-void cache_entry_load_album (cache *c);
-void cache_entry_load_tracks (cache *c);
-char *cache_load_filepath (cache *c);
+void cache_entry_load_artists (cache *c); // load artists
+void cache_entry_load_album (cache *c); // load albums
+void cache_entry_load_tracks (cache *c); // load tracks
+char *cache_load_filepath (cache *c); // get path to the selected track
 
-void cache_remove_album (cache *c, int id);
-void cache_remove_track (cache *c, int id);
+void cache_remove_album (cache *c, int id); // remove the album with the given id
+void cache_remove_track (cache *c, int id); // remove the track with the given id
 
-void cache_close (cache *c);
+void cache_close (cache *c); // close cache and free memory
 
 #endif

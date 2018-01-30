@@ -50,6 +50,14 @@ void playback_init (void);
 
 playback *playback_open_file (const char *path);
 int playback_playback (playback *pb);
+/*
+ * return
+ * 1 if file ist still playing
+ * -1 on error
+ * 0 at EOF
+ */
+
+void playback_seek_timestamp (playback *pb, const int time);
 
 void playback_free_file (playback *pb);
 

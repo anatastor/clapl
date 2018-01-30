@@ -31,8 +31,7 @@ playback *playback_open_file (const char *path)
     if (! codec)
         logcmd(LOG_ERROR, "playback: playback_open_file: could not find codec");
 
-    pb->avctx = avcodec_alloc_context3(codec);
-    if (! pb->avctx)
+    pb->avctx = avcodec_alloc_context3(codec); if (! pb->avctx)
         logcmd(LOG_ERROR, "playback: playback_open_file: could not allocate decoding context: %s", path);
 
     if (avcodec_parameters_to_context(pb->avctx, pb->ctx->streams[0]->codecpar) < 0)
@@ -156,6 +155,28 @@ int playback_playback (playback *pb)
         return 0;
 
     return 1;
+}
+
+
+void playback_seek_timestamp (playback *pb, const int time)
+{
+    while (av_read_frame(pb->ctx, &pb->pkt) >= 0)
+    {
+        if (avcodec_send_packet(pb->avctx, &pb->pkt) < 0 && pb->first_try)
+        {
+            pb->first_try--;
+            continue;
+        }
+        else if (!pb->first_try)
+            return;
+
+        if (avcodec_receive_frame(pb->avctx, pb->frame) < 0)
+            return;
+
+        int t = av_frame_get_best_effort_timestamp(pb->frame) / pb->ctx->streams[0]->time_base.den;
+        if (t >= time)
+            return;
+    }
 }
 
 

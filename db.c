@@ -33,11 +33,11 @@ sqlite3 *db_init (void)
                 artist_id INTEGER NOT NULL, \
                 album_id INTEGER NOT NULL, \
                 path TEXT NOT NULL);", NULL, 0, NULL);
-
+    
+    // create 'Playlists' artist if it does not exist
     struct entry e;
     e.artist = "Playlists";
     db_add_artist(db, &e);
-
     
     logcmd(LOG_DMSG, "db: db_init: db initialized");
     return db;
@@ -45,7 +45,8 @@ sqlite3 *db_init (void)
 
 
 int is_supported_audio_file (const char *file)
-{
+{   
+    // check if the given file is a supported audio file
     char *end = strrchr(file, '.');
     if (!end)
     {
@@ -62,9 +63,7 @@ int is_supported_audio_file (const char *file)
     for (int i = 0; i < size_supported; i++)
     {
         if (strcmp(end, supported[i]) == 0)
-        {
             return 1;
-        }
     }
 
     return 0;
@@ -72,30 +71,32 @@ int is_supported_audio_file (const char *file)
 
 
 int db_add_dir (sqlite3 *db, const char *path)
-{
+{   
+    // check if the given path is either a file or a directory
     struct stat sb;
     stat(path, &sb);
     if (S_ISREG(sb.st_mode))
     {
-        // path is a file
+        // path is a file -> call db_add_file
         db_add_file (db, path);
         return 1;
     }
+
     DIR *dir = NULL;
     struct dirent *ent = NULL;
 
-    if ((dir = opendir(path)))
+    if ((dir = opendir(path))) // open the directory
     {
         if (ent)
         {
             free(ent);
             ent = NULL;
         }
-        while ((ent = readdir(dir)))
+        while ((ent = readdir(dir))) // read files in directory
         {
-            if (ent->d_type == DT_DIR)
+            if (ent->d_type == DT_DIR) // an other directory
             {
-                if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+                if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) // do not search recursiv in '.' and '..'
                     continue;
 
                 int size = strlen(path) + strlen(ent->d_name) + 2;

@@ -2,35 +2,14 @@
 #include "input.h"
 
 
-void baum (audio *a, int time)
-{
-    int first = 1;
-    while (av_read_frame(a->pb->ctx, &a->pb->pkt) >= 0)
-    {
-        if (avcodec_send_packet(a->pb->avctx, &a->pb->pkt) < 0 && a->pb->first_try)
-        {
-            a->pb->first_try--;
-            continue;
-        }
-        else if (! a->pb->first_try)
-        {
-            return;
-        }
-        if (avcodec_receive_frame(a->pb->avctx, a->pb->frame) < 0)
-            return;
-
-        int t = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
-        if (t >= time)
-            return;
-    }
-}
-
-
 void parse_command (char *cmd, userinterface *ui, audio *a)
 {
+    if (*cmd == '\0')
+        return;
+
     char *ptr = configparser_split_string(cmd, ' ');
 
-    if (strcmp(cmd, "add") == 0)
+    if (strcmp(cmd, "add") == 0) // add the selected track to the given playlist
     {
         int reload = 0;
         struct entry *e = malloc(sizeof(struct entry));
@@ -50,7 +29,6 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
         if (db_add_track(ui->c->db, e))
             reload = 1;
 
-
         if (reload && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
         {
             cache_reload(&ui->c);
@@ -60,30 +38,23 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
         return;
     }
 
-    if (strcmp(cmd, "goto") == 0)
+    if (strcmp(cmd, "goto") == 0) // seek forward to given position
     {
         if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
         {
-            int64_t x = atoi(ptr);
-            logcmd(LOG_MSG, "x: %i | pos: %i", x, x * a->pb->ctx->streams[0]->time_base.den);
+            int timestamp = atoi(ptr);
             int duration = a->pb->ctx->duration / AV_TIME_BASE;
-            if (x != 0 && x < duration)
+            if (timestamp > 0 && timestamp < duration)
             {
-                //a->threadstate = THREADSTATE_PAUSE;
                 a->playstate = PLAYSTATE_PAUSE;
-                //int ret = av_seek_frame(a->pb->ctx, 0, x * a->pb->ctx->streams[0]->time_base.den, AVSEEK_FLAG_BACKWARD);
-                baum(a, x);
-                int ret = 0;
-                if (ret < 0)
-                    logcmd(LOG_MSG, "skipping to %i didnt work", x);
-                //a->threadstate = THREADSTATE_RUNNING;
+                playback_seek_timestamp(a->pb, timestamp);
                 a->playstate = PLAYSTATE_PLAY;
             }
         }
         return;
     }
 
-    if (strcmp(cmd, "rm") == 0)
+    if (strcmp(cmd, "rm") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0) // remove selected track from the playlist
     {
         int id = ui->c->tracks[ui->c->selectedTrack].id;
         cache_remove_track(ui->c, id);
@@ -92,7 +63,7 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
         return;
     }
 
-    if (strcmp(cmd, "rmp") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
+    if (strcmp(cmd, "rmp") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0) // remove playlist
     {
         int id = ui->c->album[ui->c->selectedAlbum].id;
         cache_remove_album(ui->c, id);
@@ -101,7 +72,7 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
         return;
     }
     
-    if (strcmp(cmd, "load") == 0)
+    if (strcmp(cmd, "load") == 0) // load a directory or file into the database
     {
         db_add_dir(ui->c->db, ptr);
         cache_reload(&ui->c);
@@ -125,9 +96,9 @@ void *playbackThread (void *vargp)
             continue;
 
         ret = playback_playback(a->pb);
-        if (ret == 0)
+        if (ret == 0) // EOF
             break;
-        else if (ret == -1)
+        else if (ret == -1) // ERROR
         {
             a->playstate == PLAYSTATE_STOP;
             return NULL;
