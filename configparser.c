@@ -85,6 +85,31 @@ char *configparser_split_string (char *const string, const char delimiter)
 }
 
 
+int configparser_get_bool (configparser *const cp, char *const key)
+{
+    char *value = ht_get(&cp->ht, key);
+    switch(*value)
+    {
+        case 't': case 'T':
+            return 1;
+
+        case 'f': case 'F':
+            return 0;
+
+        case '0':
+            return 0;
+
+        case '1':
+            return 1;
+
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+
 int configparser_get_int (configparser *const cp, char *const key)
 {
     char *value = ht_get(&cp->ht, key);

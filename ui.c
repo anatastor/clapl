@@ -47,10 +47,10 @@ void ui_clear_window (userinterface *ui, WINDOW *win, const char *string)
     werase(win);
     refresh();
     if (ui->selectedWin == win)
-        wattron(win, A_STANDOUT);
+        wattron(win, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
     box(win, 0, 0);
     mvwprintw(win, 0, 0, "%s", string ? string : "");
-    wattroff(win, A_STANDOUT);
+    wattroff(win, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
 
     wrefresh(win);
     refresh();
@@ -77,16 +77,26 @@ userinterface *ui_create (sqlite3 *db, configparser *cp)
     if (! ui)
         logcmd(LOG_ERROR_MALLOC, "ui: ui_create: unable to allocate memory for ui");
 
+    if (has_colors() == TRUE && configparser_get_bool(cp, "enable_color"))
+    {
+        ui->color = 1;
+        start_color();
+        use_default_colors();
+        int color = configparser_get_int(cp, "color");
+        if (color < COLOR_BLACK || color > COLOR_WHITE)
+            color = COLOR_RED;
+        init_pair(1, color, COLOR_BLACK);
+    }
+    else
+        ui->color = 0;
+
     ui_createWindows(ui);
 
     ui->c = cache_load(db);
     ui->c->lyrics_path = configparser_get_string(cp, "lyrics");
     ui->c->sorting = configparser_get_string(cp, "sorting");
 
-    cache_entry_load_artists(ui->c);
-    
     ui_redraw(ui);
-    
     ui_refresh(ui);
 
     logcmd(LOG_DMSG, "ui created");
@@ -109,7 +119,7 @@ void ui_print_to_window (WINDOW *win, const int width, const int line, const cha
     for (int i = 1; i < width && string; i++)
     {
         if (*string == '\0')
-            break;
+            return;
         mvwprintw(win, line, i, "%c", *string);
         string++;
     }
@@ -125,14 +135,15 @@ void ui_print_artist (userinterface *ui)
     int offset =  0;
     if (ui->c->selectedArtist > (ARTISTWIN_HEIGHT - 4))
         offset = ui->c->selectedArtist - (ARTISTWIN_HEIGHT - 4);
-    
+
     for (int i = 1; (i < (ARTISTWIN_HEIGHT - 2)) && (i <= ui->c->nartists); i++)
     {   
         if ((i + offset - 1) == ui->c->selectedArtist)
         {
-            wattron(ui->artistWin, A_STANDOUT);
+            wattron(ui->artistWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
             ui_print_to_window(ui->artistWin, (ARTISTWIN_WIDTH - 1), i, ui->c->artists[i + offset - 1].name);
-            wattroff(ui->artistWin, A_STANDOUT);
+            wattroff(ui->artistWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
+            continue;
         }
         else
             ui_print_to_window(ui->artistWin, (ARTISTWIN_WIDTH - 2), i, ui->c->artists[i + offset - 1].name);
@@ -156,9 +167,9 @@ void ui_print_album (userinterface *ui)
     {   
         if ((i + offset - 1) == ui->c->selectedAlbum)
         {
-            wattron(ui->albumWin, A_STANDOUT);
+            wattron(ui->albumWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
             ui_print_to_window(ui->albumWin, (ALBUMWIN_WIDTH - 2), i, ui->c->album[i + offset - 1].name);
-            wattroff(ui->albumWin, A_STANDOUT);
+            wattroff(ui->albumWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
         }
         else
             ui_print_to_window(ui->albumWin, (ALBUMWIN_WIDTH - 2), i, ui->c->album[i + offset -1].name);
@@ -182,9 +193,9 @@ void ui_print_track (userinterface *ui)
     {   
         if ((i + offset - 1) == ui->c->selectedTrack)
         {
-            wattron(ui->trackWin, A_STANDOUT);
+            wattron(ui->trackWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
             ui_print_to_window(ui->trackWin, (TRACKWIN_WIDTH - 1), i, ui->c->tracks[ui->c->selectedTrack].name);
-            wattroff(ui->trackWin, A_STANDOUT);
+            wattroff(ui->trackWin, ui->color ? COLOR_PAIR(1) : A_STANDOUT);
         }
         else
             ui_print_to_window(ui->trackWin, (TRACKWIN_WIDTH - 2), i, ui->c->tracks[i + offset - 1].name);
@@ -247,7 +258,6 @@ void ui_print_lyrics (userinterface *ui)
 }
 
 
-//void ui_print_info (userinterface *ui, const int threadstate, const int playstate, const int cycle)
 void ui_print_info (userinterface *ui, audio *a)
 {
     logcmd(LOG_DMSG, "ui_print_inof: executing");

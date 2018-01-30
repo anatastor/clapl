@@ -2,6 +2,30 @@
 #include "input.h"
 
 
+void baum (audio *a, int time)
+{
+    int first = 1;
+    while (av_read_frame(a->pb->ctx, &a->pb->pkt) >= 0)
+    {
+        if (avcodec_send_packet(a->pb->avctx, &a->pb->pkt) < 0 && a->pb->first_try)
+        {
+            a->pb->first_try--;
+            continue;
+        }
+        else if (! a->pb->first_try)
+        {
+            return;
+        }
+        if (avcodec_receive_frame(a->pb->avctx, a->pb->frame) < 0)
+            return;
+
+        int t = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
+        if (t >= time)
+            return;
+    }
+}
+
+
 void parse_command (char *cmd, userinterface *ui, audio *a)
 {
     char *ptr = configparser_split_string(cmd, ' ');
@@ -40,12 +64,20 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
     {
         if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
         {
-            int x = atoi(ptr);
+            int64_t x = atoi(ptr);
+            logcmd(LOG_MSG, "x: %i | pos: %i", x, x * a->pb->ctx->streams[0]->time_base.den);
             int duration = a->pb->ctx->duration / AV_TIME_BASE;
             if (x != 0 && x < duration)
             {
-                int64_t npos = x * a->pb->ctx->streams[0]->time_base.den;
-                av_seek_frame(a->pb->ctx, 0, npos, 0);
+                //a->threadstate = THREADSTATE_PAUSE;
+                a->playstate = PLAYSTATE_PAUSE;
+                //int ret = av_seek_frame(a->pb->ctx, 0, x * a->pb->ctx->streams[0]->time_base.den, AVSEEK_FLAG_BACKWARD);
+                baum(a, x);
+                int ret = 0;
+                if (ret < 0)
+                    logcmd(LOG_MSG, "skipping to %i didnt work", x);
+                //a->threadstate = THREADSTATE_RUNNING;
+                a->playstate = PLAYSTATE_PLAY;
             }
         }
         return;
@@ -145,7 +177,6 @@ char *input_get_time (int t)
     out[6] = s / 10 + 48;
     out[7] = s % 10 + 48;
     out[8] = '\0';
-    logcmd(LOG_MSG, "%i: %s", t, out);
     return out;
 }
 
@@ -185,11 +216,11 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 break;
             }
 
-        case 'a': case 'A':
+        case 9: // Tabulator //case 'a': case 'A':
             ui->selectedWin = (ui->selectedWin == ui->artistWin) ? ui->albumWin : ui->artistWin;
             ui_redraw(ui);
             ui_print_info(ui, a);
-            if (a->playstate == PLAYSTATE_PLAY)
+            if (a->playstate == PLAYSTATE_PLAY || a->playstate == PLAYSTATE_PAUSE)
                 ui_print_lyrics(ui);
             ui_refresh(ui);
             break;

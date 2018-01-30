@@ -63,6 +63,8 @@ typedef struct userinterface
     WINDOW *selectedWin;
 
     cache *c;
+
+    char color;
 } userinterface;
 
 
