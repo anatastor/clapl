@@ -5,6 +5,27 @@ mail:   anatas.torsten@gmx.de
 
 This is 'clapl'. (CommandLine AudioPlayer with Lyricsupport)
 
+
+###### CONTROLS #####
+
+Keybindings are vim like:
+navigating artist and album via 'j' and 'k'
+navigating tracks via 'n' (next) and 'b' (previous)
+start playing: 'p' or 'ENTER'
+'TABULAR' is switching between artist and album selection
+
+'r': redraw the hole terminal
+
+':' opens a simple command line
+
+press 'q' to quit
+
+you may find the config file in at '.config/clapl/'
+
+
+
+#### some technical information #####
+
 It is using ncurses to draw into the terminal.
 The playback uses the ffmpeg api aswell as libao.
 The music library is stored in a sqlite3 database in the config folder.

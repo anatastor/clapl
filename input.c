@@ -9,6 +9,41 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
 
     char *ptr = configparser_split_string(cmd, ' ');
 
+    const char *commands[] = 
+    {
+        "add",
+        "seek",
+        "rm",
+        "rmp",
+        "load"
+    };
+
+    const char *command_help[] = 
+    {
+        "add 'name of playlist': adding the selected track into the given playlist, playlist will be created if it does not exist",
+        "seek 'int timestamp': seeking forward the track to the given timestamp in seconds (may take a while to complete",
+        "rm: removes the selected track from the playlist",
+        "rmp: removes the selected playlist",
+        "load 'path to dir or file': loads the given directory or file into the database"
+    };
+
+    if (strcmp(cmd, "help") == 0)
+    {
+        if (!ptr)
+        {
+            mvprintw(LINES - 2, 1, "commands: %s, %s, %s, %s, %s (%s)", commands[0], commands[1], commands[2], commands[3], commands[4], "use help 'command' to get information about each command");
+        }
+        else
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if (strcmp(ptr, commands[i]) == 0)
+                    mvprintw(LINES - 2, 1, command_help[i]);
+            }
+        }
+        return;
+    }
+
     if (strcmp(cmd, "add") == 0) // add the selected track to the given playlist
     {
         int reload = 0;
@@ -38,7 +73,7 @@ void parse_command (char *cmd, userinterface *ui, audio *a)
         return;
     }
 
-    if (strcmp(cmd, "goto") == 0) // seek forward to given position
+    if (strcmp(cmd, "seek") == 0) // seek forward to given position
     {
         if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
         {
