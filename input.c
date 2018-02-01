@@ -187,7 +187,7 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 break;
             }
 
-        case 9: // Tabulator //case 'a': case 'A':
+        case 9: // Tabulator
             ui->selectedWin = (ui->selectedWin == ui->artistWin) ? ui->albumWin : ui->artistWin;
             ui_redraw(ui);
             ui_print_info(ui, a);

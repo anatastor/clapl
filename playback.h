@@ -48,6 +48,8 @@ typedef struct audio
 
 void playback_init (void);
 
+audio *audio_create (void); // creates and initialzes audio
+
 playback *playback_open_file (const char *path);
 int playback_playback (playback *pb);
 /*

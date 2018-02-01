@@ -13,6 +13,21 @@ void playback_init (void)
 }
 
 
+audio *audio_create (void)
+{
+    audio *a = malloc(sizeof(audio));
+    if (!a)
+        logcmd(LOG_ERROR_MALLOC, "playback: audio_create: unable to allocate memory for audio");
+
+    a->pb = NULL;
+    a->playstate = PLAYSTATE_STOP;
+    a->threadstate = THREADSTATE_FINISHED;
+    a->cycle = CYCLE_ALL_ARTIST;
+
+    return a;
+}
+
+
 playback *playback_open_file (const char *path)
 {   
     playback *pb = malloc(sizeof(playback));
@@ -60,7 +75,6 @@ playback *playback_open_file (const char *path)
         default:
             logcmd(LOG_ERROR, "playback: playback_open_file: could not detect format: %s", path);
             break;
-        
     }
     
     pb->sformat.channels = pb->avctx->channels;
@@ -71,7 +85,6 @@ playback *playback_open_file (const char *path)
     else
         pb->sformat.matrix = "C";
     
-
     int driver = ao_default_driver_id();
     pb->adevice = ao_open_live(driver, &pb->sformat, NULL);
 
@@ -148,8 +161,6 @@ int playback_playback (playback *pb)
                 ao_play(pb->adevice, (char*) pb->samples, (plane_size / sizeof(float)) * sizeof(uint16_t) * pb->avctx->channels);
                 break;
         }
-
-
     }
     else
         return 0;

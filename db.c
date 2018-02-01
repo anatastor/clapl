@@ -417,10 +417,7 @@ struct entry *db_load_entry_from_file (const char *file)
         e->artist = load_entry_string(tag->value);
     else if (tag = av_dict_get(m, "album_artist", NULL, 0))
         e->artist = load_entry_string(tag->value);
-        /*
-         * the tag "artist" does sometimes not exist
-         * instead use "album_artist"
-         */
+        //sometimes the tag 'artist' does not exist use 'album_artist' instead
 
     if (tag = av_dict_get(m, "ALBUM", NULL, 0)) // load artist
         e->album = load_entry_string(tag->value);

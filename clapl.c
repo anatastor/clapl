@@ -44,10 +44,7 @@ int main (int argc, char **argv)
     ui_init(); // initialize userinterface
     userinterface *ui = ui_create(db, &cp); // create userinterface
 
-    audio *a = malloc(sizeof(audio));
-    a->pb = 0;
-    a->playstate = PLAYSTATE_STOP;
-    a->cycle = CYCLE_ALL_ARTIST;
+    audio *a = audio_create();
     ui_print_info(ui, a); // prints infos of the currently playing track
     ui_refresh(ui);
     pthread_t thread;
