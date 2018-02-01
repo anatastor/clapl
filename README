@@ -1,0 +1,13 @@
+author: Torsten Lehmann
+date:   2018-02-01
+mail:   anatas.torsten@gmx.de
+
+
+This is 'clapl'. (CommandLine AudioPlayer with Lyricsupport)
+
+It is using ncurses to draw into the terminal.
+The playback uses the ffmpeg api aswell as libao.
+The music library is stored in a sqlite3 database in the config folder.
+The program is combined with a simple parser for configuration files, so you can change some settings.
+
+Because I still struggle creating PKGBUIL files there is none yet. I hope some time in the future I will be able to provide this aswell.
