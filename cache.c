@@ -54,6 +54,9 @@ void cache_reload (cache **c)
     int size = snprintf(NULL, 0, cc->lyrics_path);
     char *path = malloc(sizeof(char) * size);
     strcpy(path, cc->lyrics_path);
+
+    cmd_table *ct = cc->commands;
+    cc->commands = NULL;
     
     // copy the sorting option
     size = snprintf(NULL, 0, cc->sorting);
@@ -65,6 +68,7 @@ void cache_reload (cache **c)
     cache_close(*c);
     *c = cache_load(db);
     cc = *c;
+    cc->commands = ct;
     cc->lyrics_path = path; // put path to lyrics back into the new cache
     cc->sorting = sort; // put sorting option back into the new cache
     cc->currentTrack = e;
@@ -280,5 +284,7 @@ void cache_close (cache *c)
         free(c->lyrics_path);
     if (c->sorting)
         free(c->sorting);
+    if (c->commands)
+        free(c->commands);
     free(c);
 }

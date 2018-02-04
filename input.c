@@ -2,121 +2,33 @@
 #include "input.h"
 
 
-void parse_command (char *cmd, userinterface *ui, audio *a)
+void parse_command (char *command, userinterface *ui, audio *a)
 {
-    if (*cmd == '\0')
+    if (*command == '\0')
         return;
 
-    char *ptr = configparser_split_string(cmd, ' ');
-
-    const char *commands[] = 
+    char *token = strtok(command, " ");
+    cmd *c = cmd_table_get(ui->c->commands, token);
+    logcmd(LOG_MSG, "token = %s", token);
+    if (!c)
     {
-        "add",
-        "seek",
-        "rm",
-        "rmp",
-        "load"
-    };
-
-    const char *command_help[] = 
-    {
-        "add 'name of playlist': adding the selected track into the given playlist, playlist will be created if it does not exist",
-        "seek 'int timestamp': seeking forward the track to the given timestamp in seconds (may take a while to complete",
-        "rm: removes the selected track from the playlist",
-        "rmp: removes the selected playlist",
-        "load 'path to dir or file': loads the given directory or file into the database"
-    };
-
-    if (strcmp(cmd, "help") == 0)
-    {
-        if (!ptr)
-        {
-            mvprintw(LINES - 2, 1, "commands: %s, %s, %s, %s, %s (%s)", commands[0], commands[1], commands[2], commands[3], commands[4], "use help 'command' to get information about each command");
-        }
-        else
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                if (strcmp(ptr, commands[i]) == 0)
-                    mvprintw(LINES - 2, 1, command_help[i]);
-            }
-        }
+        logcmd(LOG_MSG, "no command found");
         return;
     }
 
-    if (strcmp(cmd, "add") == 0) // add the selected track to the given playlist
-    {
-        int reload = 0;
-        struct entry *e = malloc(sizeof(struct entry));
-        e->artist = "Playlists";
-        if (db_add_artist(ui->c->db, e))
-            reload = 1;
+    cmd_arg *args = cmdparser_get_args(command, c->args);
+    if (strcmp(token, "seek") == 0)
+        args[0].v = a;
+    else
+        args[0].v = ui;
 
-        e->album = ptr;
-        if(db_add_album(ui->c->db, e))
-            reload = 1;
-        
-        e->number = 0;
-        e->totalnumber = 0;
-        e->title = ui->c->tracks[ui->c->selectedTrack].name;
-        e->file = cache_load_filepath(ui->c);
-        
-        if (db_add_track(ui->c->db, e))
-            reload = 1;
-
-        if (reload && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0)
-        {
-            cache_reload(&ui->c);
-            ui_redraw(ui);
-            ui_refresh(ui);
-        }
-        return;
-    }
-
-    if (strcmp(cmd, "seek") == 0) // seek forward to given position
+    if (c->func(args)) // returns 1 if redraw necessary
     {
-        if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
-        {
-            int timestamp = atoi(ptr);
-            int duration = a->pb->ctx->duration / AV_TIME_BASE;
-            if (timestamp > 0 && timestamp < duration)
-            {
-                a->playstate = PLAYSTATE_PAUSE;
-                playback_seek_timestamp(a->pb, timestamp);
-                a->playstate = PLAYSTATE_PLAY;
-            }
-        }
-        return;
-    }
-
-    if (strcmp(cmd, "rm") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0) // remove selected track from the playlist
-    {
-        int id = ui->c->tracks[ui->c->selectedTrack].id;
-        cache_remove_track(ui->c, id);
-        ui_print_track(ui);
-        ui_refresh(ui);
-        return;
-    }
-
-    if (strcmp(cmd, "rmp") == 0 && strcmp(ui->c->artists[ui->c->selectedArtist].name, "Playlists") == 0) // remove playlist
-    {
-        int id = ui->c->album[ui->c->selectedAlbum].id;
-        cache_remove_album(ui->c, id);
-        ui_print_album(ui);
-        ui_refresh(ui);
-        return;
-    }
-    
-    if (strcmp(cmd, "load") == 0) // load a directory or file into the database
-    {
-        db_add_dir(ui->c->db, ptr);
-        cache_reload(&ui->c);
         ui_redraw(ui);
         ui_refresh(ui);
-        return;
     }
-
 }
+
 
 
 void *playbackThread (void *vargp)

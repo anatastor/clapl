@@ -72,7 +72,10 @@ int is_supported_audio_file (const char *file)
 
 int db_add_dir (sqlite3 *db, const char *path)
 {   
-    // check if the given path is either a file or a directory
+    if (*path == '~')
+        path += 2;
+    
+    // check if path is a file or directory
     struct stat sb;
     stat(path, &sb);
     if (S_ISREG(sb.st_mode))

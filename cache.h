@@ -6,6 +6,8 @@
 #include "logger.h"
 #include "db.h"
 
+#include "commandtable.h"
+
 
 typedef struct cache_entry
 {
@@ -34,6 +36,8 @@ typedef struct cache
 
     char *sorting; // options defining the sorting behaviour
     char *lyrics_path; // path to the lyrics
+
+    cmd_table *commands;
 } cache;
 
 /*

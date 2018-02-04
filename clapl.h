@@ -12,5 +12,7 @@
 #include "logger.h"
 #include "ui.h"
 
+#include "cmd.h"
+
 
 #endif

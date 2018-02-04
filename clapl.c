@@ -44,6 +44,8 @@ int main (int argc, char **argv)
     ui_init(); // initialize userinterface
     userinterface *ui = ui_create(db, &cp); // create userinterface
 
+    ui->c->commands = load_commands();
+
     audio *a = audio_create();
     ui_print_info(ui, a); // prints infos of the currently playing track
     ui_refresh(ui);
