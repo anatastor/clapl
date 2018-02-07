@@ -27,7 +27,14 @@ void cmd_arg_init (cmd_arg *arg)
 
 
 cmd_arg *cmdparser_get_args (char *command, const char *args_s)
-{
+{   
+    char delim;
+    if (strcmp(args_s, "vs") == 0)
+        delim = '\0';
+    else
+        delim = ' ';
+
+
     int argc = strlen(args_s);
     cmd_arg *args = NULL;
     if (argc)
@@ -37,7 +44,7 @@ cmd_arg *cmdparser_get_args (char *command, const char *args_s)
             cmd_arg_init(&args[i]);
     }
 
-    char *token = strtok(NULL, " ");
+    char *token = strtok(NULL, &delim);
 
     for (int i = 0; i < argc && token; i++)
     {
@@ -68,7 +75,7 @@ cmd_arg *cmdparser_get_args (char *command, const char *args_s)
                 continue;
                 break;
         }
-        token = strtok(NULL, " ");
+        token = strtok(NULL, &delim);
     }
 
     return args;

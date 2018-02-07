@@ -7,14 +7,17 @@ void parse_command (char *command, userinterface *ui, audio *a)
     if (*command == '\0')
         return;
 
+
     char *token = strtok(command, " ");
     cmd *c = cmd_table_get(ui->c->commands, token);
     logcmd(LOG_MSG, "token = %s", token);
+    logcmd(LOG_MSG, "command = %s", command);
     if (!c)
     {
         logcmd(LOG_MSG, "no command found");
         return;
     }
+
 
     cmd_arg *args = cmdparser_get_args(command, c->args);
     if (strcmp(token, "seek") == 0)
