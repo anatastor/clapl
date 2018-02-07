@@ -16,7 +16,7 @@
 
 #define CHECK_ARTIST    "SELECT id FROM artist WHERE name=\"%s\";"
 #define CHECK_ALBUM     "SELECT id FROM album WHERE name=\"%s\" AND artist_id=%i;"
-#define CHECK_TRACK     "SELECT id FROM track WHERE title=\"%s\" AND number=%i AND total_number=%i AND artist_id=%i AND album_id=%i AND path=\"%s\";"
+#define CHECK_TRACK     "SELECT id FROM track WHERE title=\"%s\" AND number=%i AND total_number=%i AND artist_id=%i AND album_id=%i;"
 
 #define INSERT_ARTIST   "INSERT INTO artist(id, name) VALUES(NULL, \"%s\");"
 #define INSERT_ALBUM    "INSERT INTO album(id, name, artist_id) VALUES(NULL, \"%s\", %i);"

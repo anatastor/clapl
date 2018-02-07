@@ -207,11 +207,11 @@ int db_check_track (sqlite3 *db, const struct entry *e)
     char *err = NULL;
     int id = -1;
 
-    int size = snprintf(NULL, 0, CHECK_TRACK, e->title, e->number, e->totalnumber, e->artist_id, e->album_id, e->file);
+    int size = snprintf(NULL, 0, CHECK_TRACK, e->title, e->number, e->totalnumber, e->artist_id, e->album_id);
     char *sql = malloc(sizeof(char) * size);
     if (! sql)
         logcmd(LOG_ERROR_MALLOC, "db: db_check_track: unable to allocate memory for sql");
-    snprintf(sql, size, CHECK_TRACK, e->title, e->number, e->totalnumber, e->artist_id, e->album_id, e->file);
+    snprintf(sql, size, CHECK_TRACK, e->title, e->number, e->totalnumber, e->artist_id, e->album_id);
     if (sqlite3_exec(db, sql, callback, &id, &err) != SQLITE_OK)
     {
         logcmd(LOG_ERROR, "db: db_check_track: SQL ERROR: %i", err);
