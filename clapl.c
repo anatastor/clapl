@@ -32,6 +32,7 @@ void load_config (configparser *cp)
 
 int main (int argc, char **argv)
 {
+    srand(120895);
     configparser cp;
     load_config(&cp); // load config file
     

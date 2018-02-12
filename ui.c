@@ -290,6 +290,10 @@ void ui_print_info (userinterface *ui, audio *a)
         case CYCLE_TRACK:
             mvwprintw(ui->infoWin, 2, 1, "repeat track");
             break;
+
+        case CYCLE_RANDOM:
+            mvwprintw(ui->infoWin, 2, 1, "random");
+            break;
     }
     wrefresh(ui->infoWin);
 }

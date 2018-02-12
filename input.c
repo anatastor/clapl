@@ -276,6 +276,10 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                         ui->c->selectedTrack = 0;
                     break;
 
+                case CYCLE_RANDOM:
+                    ui->c->selectedTrack = rand() % ui->c->ntracks;
+                    break;
+
                 case CYCLE_TRACK:
                     break;
             }
