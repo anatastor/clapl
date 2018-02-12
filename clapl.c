@@ -16,12 +16,8 @@ void load_config (configparser *cp)
     ret = stat(".config/clapl/config", &sb); // check if config file exists
     if (ret != 0) 
     { 
-        // config file does not exitst
-        // create defaults
-        const char *default_config = "lyrics=Music/Lyrics/\nsorting=number # number or title\nlog_file=.config/clapl/log.log\nenable_color=true  # true (1) or false (0), if terminal does not support color output will always be monochrome\ncolor=7\n#settings for color, only useful if enable_color=true\n# 0 = BLACK\n# 1 = RED\n# 2 = GREEN\n# 3 = YELLOW\n# 4 = BLUE\n# 5 = MAGENTA\n# 6 = CYAN\n# 7 = WHITE\n";
-        FILE *config = fopen(".config/clapl/config", "w");
-        fprintf(config, default_config);
-        fclose(config);
+        fprintf(stderr, "could not load config file\ncheck ~/.config/clapl/config");
+        exit(1);
     }
     
     //initialize and load config file
