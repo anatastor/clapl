@@ -260,7 +260,7 @@ void ui_print_lyrics (userinterface *ui)
 
 void ui_print_info (userinterface *ui, audio *a)
 {
-    logcmd(LOG_DMSG, "ui_print_inof: executing");
+    logcmd(LOG_DMSG, "ui_print_info: executing");
     ui_clear_window(ui, ui->infoWin, NULL);
     switch (a->playstate)
     {

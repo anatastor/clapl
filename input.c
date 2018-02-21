@@ -238,13 +238,18 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
         case 'r': case 'R':
             // redraw Winows
             {
+                int selectedAlbum = ui->c->selectedAlbum;
+                int selectedTrack = ui->c->selectedTrack;
+
                 endwin();
                 ui_createWindows(ui);
                 ui_redraw(ui);
                 if (a->threadstate == THREADSTATE_RUNNING)
                     ui_print_lyrics(ui);
-
+            
+                ui->c->selectedAlbum = selectedAlbum;
                 ui_print_album(ui);
+                ui->c->selectedTrack = selectedTrack;
                 ui_print_track(ui);
                 ui_print_info(ui, a);
                 ui_refresh(ui);

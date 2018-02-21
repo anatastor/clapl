@@ -40,6 +40,9 @@ typedef struct cache
     cmd_table *commands;
 } cache;
 
+
+char *copy_string (const char *value);
+
 /*
  * initialize and load the cache
  * param[in] pointer to the sqlite3 database

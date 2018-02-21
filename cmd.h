@@ -16,6 +16,7 @@ int cmd_seek (cmd_arg *args);
 int cmd_rm (cmd_arg *args);
 int cmd_rmp (cmd_arg *args);
 int cmd_load (cmd_arg *args);
+int cmd_sorting (cmd_arg *args);
 
 
 

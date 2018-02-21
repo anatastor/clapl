@@ -8,13 +8,14 @@ cmd command_list[] =
     {"seek", cmd_seek, "vi", "help"},
     {"rm", cmd_rm, "v", "help"},
     {"rmp", cmd_rmp, "v", "help"},
-    {"load", cmd_load, "vs", "help"}
+    {"load", cmd_load, "vs", "help"},
+    {"sorting", cmd_sorting, "vs", "help"}
 };
 
 
 cmd_table *load_commands (void)
 {   
-    const int command_list_size = 5;
+    const int command_list_size = 6;
 
     cmd_table *commands = cmd_table_create(10);
     
@@ -101,4 +102,13 @@ int cmd_load (cmd_arg *args)
     ui_redraw(ui);
     ui_refresh(ui);
     return 0;
+}
+
+
+int cmd_sorting (cmd_arg *args)
+{
+    userinterface *ui = args[0].v;
+    ui->c->sorting = copy_string(args[1].s);
+    ui->c->selectedTrack = 0;
+    ui_print_track(ui);
 }
