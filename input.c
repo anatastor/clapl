@@ -227,10 +227,18 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
             ui_refresh(ui);
             break;
 
-        case 'c': case 'C':
+        case 'c':
             a->cycle++;
             if (a->cycle == CYCLE_ENUM_SIZE)
                 a->cycle = 0;
+            ui_print_info(ui, a);
+            ui_refresh(ui);
+            break;
+
+        case 'C':
+            a->cycle--;
+            if (a->cycle < 0)
+                a->cycle = CYCLE_ENUM_SIZE - 1;
             ui_print_info(ui, a);
             ui_refresh(ui);
             break;
@@ -255,11 +263,12 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 ui_refresh(ui);
                 break;
             }
-    }
+    }   
+
 
     if (a->playstate == PLAYSTATE_NEXT)
     {
-        if (c->tracks[ui->c->selectedTrack].id == c->currentTrack.id)
+        if (ui->c->tracks[ui->c->selectedTrack].id == ui->c->currentTrack.id)
         {
             switch (a->cycle)
             {
