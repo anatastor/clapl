@@ -28,15 +28,31 @@ audio *audio_create (void)
 }
 
 
+audio *audio_destroy (audio *a)
+{
+    printf("\ndestroy audio\n");
+    if (a->pb)
+    {
+        playback_free_file(a->pb);
+        free(a->pb);
+    }
+
+
+    free(a);
+    return NULL;
+}
+
+
 playback *playback_open_file (const char *path)
 {   
     playback *pb = malloc(sizeof(playback));
 
     pb->first_try = 2;
 
-    pb->ctx = avformat_alloc_context();
+    pb->ctx = NULL;
     if (avformat_open_input(&pb->ctx, path, NULL, NULL) < 0)
         logcmd(LOG_ERROR, "playback: playback_open_file: coult not open file");
+
 
     if (avformat_find_stream_info(pb->ctx, NULL) < 0)
         logcmd(LOG_ERROR, "playback: playback_open_file: could not find stream info");
@@ -88,9 +104,10 @@ playback *playback_open_file (const char *path)
     int driver = ao_default_driver_id();
     pb->adevice = ao_open_live(driver, &pb->sformat, NULL);
 
-    av_init_packet(&pb->pkt);
+    pb->pkt = av_packet_alloc();
+    av_init_packet(pb->pkt);
     pb->frame = av_frame_alloc();
-
+    
     return pb;
 }
 
@@ -99,12 +116,13 @@ int playback_playback (playback *pb)
 {
     int plane_size;
 
-    if (av_read_frame(pb->ctx, &pb->pkt) >= 0)
+    if (av_read_frame(pb->ctx, pb->pkt) >= 0)
     {
-        if (avcodec_send_packet(pb->avctx, &pb->pkt) < 0 && pb->first_try)
+        if (avcodec_send_packet(pb->avctx, pb->pkt) < 0 && pb->first_try)
         {
             pb->first_try--;
             logcmd(LOG_DMSG, "error sending packet, trying again");
+            av_packet_unref(pb->pkt);
             return 1;
         }
         else if (! pb->first_try)
@@ -161,6 +179,7 @@ int playback_playback (playback *pb)
                 ao_play(pb->adevice, (char*) pb->samples, (plane_size / sizeof(float)) * sizeof(uint16_t) * pb->avctx->channels);
                 break;
         }
+        av_packet_unref(pb->pkt);
     }
     else
         return 0;
@@ -171,9 +190,9 @@ int playback_playback (playback *pb)
 
 void playback_seek_timestamp (playback *pb, const int time)
 {
-    while (av_read_frame(pb->ctx, &pb->pkt) >= 0)
+    while (av_read_frame(pb->ctx, pb->pkt) >= 0)
     {
-        if (avcodec_send_packet(pb->avctx, &pb->pkt) < 0 && pb->first_try)
+        if (avcodec_send_packet(pb->avctx, pb->pkt) < 0 && pb->first_try)
         {
             pb->first_try--;
             continue;
@@ -192,11 +211,18 @@ void playback_seek_timestamp (playback *pb, const int time)
 
 
 void playback_free_file (playback *pb)
-{
+{   
+    printf("\ncalled\n");
     if (! pb)
         return;
-    avformat_close_input(&pb->ctx);
+
+    printf("\nplayback_free_file\n");
+    
+    av_packet_free(&pb->pkt);
     ao_close(pb->adevice);
+    av_frame_free(&pb->frame);
+    avcodec_free_context(&pb->avctx);
+    avformat_close_input(&pb->ctx);
 }
 
 

@@ -35,6 +35,10 @@ int ht_init (hashtable *const ht, const int size);
  * \return 1 on success, 0 on failure
  */
 
+
+hashtable *ht_free (hashtable *ht);
+
+
 int ht_hash (hashtable *const ht, char *const key);
 /**
  * @func

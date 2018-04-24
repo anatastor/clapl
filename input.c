@@ -60,9 +60,6 @@ void *playbackThread (void *vargp)
 
     logcmd(LOG_DMSG, "input: playbackThread: terminating thread");
     a->threadstate = THREADSTATE_FINISHED;
-    playback_free_file(a->pb);
-    free(a->pb);
-    a->pb = NULL;
     a->playstate = PLAYSTATE_NEXT;
     return NULL;
 }
@@ -71,8 +68,17 @@ void *playbackThread (void *vargp)
 void start_playback (audio *a, userinterface *ui, pthread_t *thread)
 {
     logcmd(LOG_DMSG, "input: start_playback: executing");
-    a->pb = playback_open_file(cache_load_filepath(ui->c));
-    logcmd(LOG_DMSG, "input: start_playback: opened file: %s", a->pb);
+    char *file = cache_load_filepath(ui->c);
+    logcmd(LOG_DMSG, "file: %s", file);
+    if (a->pb)
+    {
+        playback_free_file(a->pb);
+        free(a->pb);
+        a->pb = NULL;
+    }
+    a->pb = playback_open_file(file);
+    logcmd(LOG_DMSG, "input: start_playback: opened file: %s", file);
+    free(file);
     a->playstate = PLAYSTATE_PLAY;
     a->threadstate = THREADSTATE_RUNNING;
     ui->c->currentTrack = ui->c->tracks[ui->c->selectedTrack];
@@ -80,6 +86,7 @@ void start_playback (audio *a, userinterface *ui, pthread_t *thread)
     ui_print_lyrics(ui);
     pthread_create(thread, NULL, playbackThread, a);
     ui_refresh(ui);
+    return;
 }
 
 
@@ -104,7 +111,7 @@ char *input_get_time (int t)
 
 void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char ch)
 {   
-    if (a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
+    if (ch != 'q' && a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
     {
         int duration = a->pb->ctx->duration / AV_TIME_BASE;
         int pos = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
@@ -263,11 +270,22 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                 ui_refresh(ui);
                 break;
             }
+
+        case 'q':
+            if (a->threadstate == THREADSTATE_RUNNING)
+            {
+                a->threadstate = THREADSTATE_TERMINATE;
+                pthread_join(*thread, NULL);
+                a->playstate = PLAYSTATE_STOP;
+            }
+            return;
+            break;
     }   
 
 
     if (a->playstate == PLAYSTATE_NEXT)
     {
+        pthread_join(*thread, NULL);
         if (ui->c->tracks[ui->c->selectedTrack].id == ui->c->currentTrack.id)
         {
             switch (a->cycle)
@@ -291,8 +309,13 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
                     break;
 
                 case CYCLE_RANDOM:
-                    ui->c->selectedTrack = rand() % ui->c->ntracks;
-                    break;
+                    {
+                        int r = rand() % ui->c->ntracks;
+                        while (r == ui->c->selectedTrack)
+                            r = rand() % ui->c->ntracks;
+                        ui->c->selectedTrack = r;
+                        break;
+                    }
 
                 case CYCLE_TRACK:
                     break;

@@ -22,13 +22,22 @@ char *read_line (FILE *const file, const int buffer_size)
     
 
     if (c == EOF && pos == 0)
+    {
+        free(line);
         return NULL;
+    }
 
     if (c == '\n' && pos == 0) // removes empty lines
+    {
+        free(line);
         return read_line(file, buffer_size);
+    }
 
     if (line[0] == '#')
+    {
+        free(line);
         return read_line(file, buffer_size);
+    }
 
     char *ptr = strrchr(line, '#');
     if (ptr)
@@ -45,7 +54,15 @@ void configparser_init (configparser *const cp, char *const file, const int size
         logcmd(LOG_ERROR_MALLOC, "configparser: configparser_init: could not malloc cp->file");
 
     cp->delimiter = delimiter;
-    ht_init (&cp->ht, size); // create hash table
+    cp->ht = ht_create(size); // create hashtable
+}
+
+
+configparser *configparser_delete (configparser *cp)
+{   
+    cp->ht = ht_free(cp->ht);
+    free(cp);
+    return NULL;
 }
 
 
@@ -53,7 +70,7 @@ void configparser_init_file (configparser *const cp, FILE *file, const int size,
 {
     cp->file = file;
     cp->delimiter = delimiter;
-    ht_init(&cp->ht, size);
+    cp->ht = ht_create(size);
 }
 
 
@@ -64,7 +81,7 @@ void configparser_load (configparser *const cp)
     while (line)
     {
         value = configparser_split_string(line, cp->delimiter);
-        ht_set(&cp->ht, line, value);
+        ht_set(cp->ht, line, value);
         free(line);
         value = NULL;
         line = read_line(cp->file, 255);
@@ -87,7 +104,7 @@ char *configparser_split_string (char *const string, const char delimiter)
 
 int configparser_get_bool (configparser *const cp, char *const key)
 {
-    char *value = ht_get(&cp->ht, key);
+    char *value = ht_get(cp->ht, key);
     switch(*value)
     {
         case 't': case 'T':
@@ -112,7 +129,7 @@ int configparser_get_bool (configparser *const cp, char *const key)
 
 int configparser_get_int (configparser *const cp, char *const key)
 {
-    char *value = ht_get(&cp->ht, key);
+    char *value = ht_get(cp->ht, key);
     if (value)
         return (atoi(value));
 
@@ -122,6 +139,6 @@ int configparser_get_int (configparser *const cp, char *const key)
 
 char *configparser_get_string (configparser *const cp, char *const key)
 {
-    return ht_get(&cp->ht, key);
+    return ht_get(cp->ht, key);
 }
 

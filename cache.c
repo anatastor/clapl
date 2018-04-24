@@ -96,7 +96,7 @@ void cache_entry_load_artists (cache *c)
     sqlite3_stmt *res;
     const char *tail = NULL;
     int error;
-    error = sqlite3_prepare_v2(c->db, "SELECT name, id FROM artist ORDER BY name;", 1000, &res, &tail);
+    error = sqlite3_prepare_v2(c->db, "SELECT name, id FROM artist ORDER BY name;", -1, &res, &tail);
     
     // fill array of artists with values from the database
     int count = 0;
@@ -106,7 +106,8 @@ void cache_entry_load_artists (cache *c)
         artists[count].id = atoi(sqlite3_column_text(res, 1));
         count++;
     }
-    
+    sqlite3_finalize(res);
+
     logcmd(LOG_DMSG, "nartists: %i", c->nartists);
     c->artists = artists;
     c->selectedArtist = 0;
@@ -140,7 +141,7 @@ void cache_entry_load_album (cache *c)
     if (! album)
         logcmd(LOG_ERROR_MALLOC, "cache: cache_entry_load_album: unalbe to allocate memory for album");
 
-    sqlite3_stmt *res;
+    sqlite3_stmt *res = NULL;
     const char *tail = NULL;
     
     size = snprintf(NULL, 0, "SELECT name, id FROM album WHERE artist_id=%i ORDER BY name;",
@@ -148,7 +149,8 @@ void cache_entry_load_album (cache *c)
     sql = realloc(sql, sizeof(char) * size);
     snprintf(sql, size, "SELECT name, id FROM album WHERE artist_id=%i ORDER BY name;",
             c->artists[c->selectedArtist].id);
-    int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
+    int error = sqlite3_prepare_v2(c->db, sql, -1, &res, &tail);
+
 
     // fill album array
     int count = 0;
@@ -158,6 +160,8 @@ void cache_entry_load_album (cache *c)
         album[count].id = atoi(sqlite3_column_text(res, 1));
         count++;
     }
+    sqlite3_finalize(res);
+    
     
     free(sql);
     c->album = album;
@@ -207,7 +211,7 @@ void cache_entry_load_tracks (cache *c)
             c->artists[c->selectedArtist].id,
             c->sorting);
     
-    int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
+    int error = sqlite3_prepare_v2(c->db, sql, -1, &res, &tail);
     
     // fill track array
     int count = 0;
@@ -217,6 +221,7 @@ void cache_entry_load_tracks (cache *c)
         tracks[count].id = atoi(sqlite3_column_text(res, 1));
         count++;
     }
+    sqlite3_finalize(res);
 
     free(sql);
     c->tracks = tracks;
@@ -227,17 +232,17 @@ void cache_entry_load_tracks (cache *c)
 char *cache_load_filepath (cache *c)
 {
     logcmd(LOG_DMSG, "track_id: %i", c->tracks[c->selectedTrack].id);
-    char *err = NULL;
     int size = snprintf(NULL, 0, "SELECT path FROM track WHERE id=%i;", c->tracks[c->selectedTrack].id);
     char *sql = malloc(sizeof(char) * size);
     snprintf(sql, size, "SELECT path FROM track WHERE id=%i;", c->tracks[c->selectedTrack].id);
-    
+
     char *string;
     sqlite3_stmt *res;
     const char *tail = NULL;
-    int error = sqlite3_prepare_v2(c->db, sql, 1000, &res, &tail);
+    int error = sqlite3_prepare_v2(c->db, sql, -1, &res, &tail);
     if (sqlite3_step(res) == SQLITE_ROW)
         string = copy_string(sqlite3_column_text(res, 0));
+    sqlite3_finalize(res);
 
     free(sql);
     return string;
@@ -275,16 +280,45 @@ void cache_close (cache *c)
     c->currentTrack.id = -1;
     // close members of cache
     if (c->artists)
+    {
+        for (int i = 0; i < c->nartists; i++)
+        {
+            if (c->artists[i].name)
+                free(c->artists[i].name);
+        }
         free(c->artists);
+    }
+
     if (c->album)
+    {
+        for (int i = 0; i < c->nalbum; i++)
+        {
+            if (c->album[i].name)
+                free(c->album[i].name);
+        }
         free(c->album);
+    }
+
     if (c->tracks)
+    {
+        for (int i = 0; i < c->ntracks; i++)
+        {
+            if (c->tracks[i].name)
+                free(c->tracks[i].name);
+        }
         free(c->tracks);
+    }
+    
+    /*
     if (c->lyrics_path)
         free(c->lyrics_path);
     if (c->sorting)
         free(c->sorting);
+    * are freed during the freeing process of the configparser
+    */
+    
     if (c->commands)
-        free(c->commands);
+        c->commands = cmd_table_free(c->commands);
+
     free(c);
 }

@@ -45,6 +45,7 @@ typedef struct
 cmd_table *cmd_table_create (const int size);
 
 int cmd_table_init (cmd_table *commands, const int size);
+cmd_table *cmd_table_free (cmd_table *commands);
 
 int cmd_table_hash (const cmd_table *commands, const char *key);
 

@@ -223,14 +223,17 @@ char *ui_read_line (FILE *file, const int buffer_size)
     }
 
     if (c == EOF && pos == 0)
+    {
+        free(line);
         return NULL;
+    }
 
     return line;
 }
 
 
 void ui_print_lyrics (userinterface *ui)
-{
+{   
     ui_clear_window(ui, ui->lyricWin, "Lyrics");
 
     int size = snprintf(NULL, 0, "%s%s", ui->c->lyrics_path, ui->c->currentTrack.name) + 1;
@@ -250,16 +253,22 @@ void ui_print_lyrics (userinterface *ui)
             buffer = ui_read_line(file, LYRICWIN_WIDTH - 2);
             pos++;
         }
+        if (buffer)
+        {
+            free(buffer);
+            buffer = NULL;
+        }
         fclose(file);
     }
     else
         mvwprintw(ui->lyricWin, 2, 1, "no lyrics found: %s", path);
-
+    
+    free(path);
 }
 
 
 void ui_print_info (userinterface *ui, audio *a)
-{
+{   
     logcmd(LOG_DMSG, "ui_print_info: executing");
     ui_clear_window(ui, ui->infoWin, NULL);
     switch (a->playstate)

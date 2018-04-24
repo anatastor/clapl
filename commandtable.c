@@ -29,6 +29,31 @@ int cmd_table_init (cmd_table *commands, const int size)
 }
 
 
+void cmd_table_entry_free (cmd_table_entry *e)
+{
+    if (e->next)
+        cmd_table_entry_free(e->next);
+    free(e);
+}
+
+
+cmd_table *cmd_table_free (cmd_table *commands)
+{   
+    if (!commands)
+        return NULL;
+    
+    for (int i = 0; i < commands->size; i++)
+    {
+        cmd_table_entry *e = commands->table[i];
+        if (e)
+            cmd_table_entry_free(e);
+    }
+    free(commands->table);
+    free(commands);
+    return NULL;
+}
+
+
 int cmd_table_hash (const cmd_table *commands, const char *key)
 {
     unsigned long int hashval = 0;

@@ -21,25 +21,25 @@ void load_config (configparser *cp)
     }
     
     //initialize and load config file
-    configparser_init(cp, ".config/clapl/config", 2, '=');
+    configparser_init(cp, ".config/clapl/config", 5, '=');
     configparser_load(cp);
 }
 
 
 int main (int argc, char **argv)
 {
-    srand(120895);
-    configparser cp;
-    load_config(&cp); // load config file
+    srand(time(NULL));
+    configparser *cp = malloc(sizeof(configparser));
+    load_config(cp); // load config file
     
     //LOGGER_PATH = ".config/clapl/log.txt";
-    LOGGER_PATH = configparser_get_string(&cp, "log_file"); // set path for log file
+    LOGGER_PATH = configparser_get_string(cp, "log_file"); // set path for log file
     LOGGER_FILE = fopen(LOGGER_PATH, "w"); // open log file
 
     playback_init(); // initialize libav and libao
     sqlite3 *db = db_init();
     ui_init(); // initialize userinterface
-    userinterface *ui = ui_create(db, &cp); // create userinterface
+    userinterface *ui = ui_create(db, cp); // create userinterface
 
     ui->c->commands = load_commands();
 
@@ -49,16 +49,46 @@ int main (int argc, char **argv)
     pthread_t thread;
 
     char ch;
+    char running = 1;
+    while (1)
+    {
+        ch = getch();
+        input(ui, ui->c, a, &thread, ch);
+        if (ch == 'q')
+            break;
+    }
+    /*
     while ((ch = getch()) != 'q') // main loop
         input(ui, ui->c, a, &thread, ch);
+    */
+    
+    /*
+    cache_entry_load_album(ui->c);
+    cache_entry_load_tracks(ui->c);
+    */
+    /*
+    input(ui, ui->c, a, &thread, 'p');
+    input(ui, ui->c, a, &thread, 'q');
+    char running = 1;
+    char ch;
+    while (running)
+    {
+        ch = getchar();
+        getchar();
+        if (ch == 'q')
+            running = 0;
+        input(ui, ui->c, a, &thread, ch);
+    }
+    */
+
 
     endwin(); // close ncurses
+    a = audio_destroy(a);
+    configparser_delete(cp);
     cache_close(ui->c);
     free(ui);
     db_close(db);
-    if (db)
-        free(db);
-
+    
     fclose(LOGGER_FILE); // close log file
     return 0;
 }

@@ -13,11 +13,11 @@ all: $(PROG)
 
 
 $(PROG): $(PROG).c $(PROG).h $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -g -o $@ $^ $(LDFLAGS)
 
 
 .o: .c .h
-	$(CC) -c $@ $^
+	$(CC) -g -c $@ $^
 
 
 install: all

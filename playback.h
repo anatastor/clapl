@@ -27,7 +27,7 @@ typedef struct playback
     ao_sample_format sformat;
     ao_device *adevice;
 
-    AVPacket pkt;
+    AVPacket *pkt;
     AVFrame *frame;
 
     uint8_t buffer[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
@@ -49,6 +49,7 @@ typedef struct audio
 void playback_init (void);
 
 audio *audio_create (void); // creates and initialzes audio
+audio *audio_destroy (audio *a);
 
 playback *playback_open_file (const char *path);
 int playback_playback (playback *pb);

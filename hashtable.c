@@ -2,12 +2,9 @@
 #include "hashtable.h"
 
 
-char *strcup (const char *const s)
+char *strcup (const char *s)
 {
-    char *d = malloc(strlen(s) + 1);
-    if (d == NULL)
-        return NULL;
-
+    char *d = malloc(sizeof(char) * (strlen(s) + 1));
     strcpy (d, s);
     return d;
 }
@@ -36,6 +33,33 @@ int ht_init (hashtable *const ht, const int size)
         ht->entries[i] = NULL;
     
     return 1; // success
+}
+
+
+void remove_entry (ht_entry *e)
+{
+    if (e->next)
+        remove_entry(e->next);
+    
+    if (e->key)
+        free(e->key);
+    if (e->value)
+        free(e->value);
+    free(e);
+}
+
+
+hashtable *ht_free (hashtable *ht)
+{   
+    for (int i = 0; i < ht->size; i++)
+    {   
+        ht_entry *e = ht->entries[i];
+        if (e)
+            remove_entry(e);
+    }
+    free(ht->entries);
+    free(ht);
+    return NULL;
 }
 
 
