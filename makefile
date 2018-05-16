@@ -22,7 +22,7 @@ $(PROG): $(PROG).c $(PROG).h $(OBJ)
 
 install: all
 	@mkdir -p ~/.config/clapl
-	@cp config ~/.config/clapl
+	@cp -n config ~/.config/clapl
 	@sudo install -Dm755 $(PROG) $(DESTDIR)$(PREFIX)/bin/$(PROG)
 
 

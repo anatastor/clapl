@@ -27,7 +27,7 @@ typedef struct
 
 
 void configparser_init (configparser *const cp, char *const file, const int size, const char delimiter);
-configparser *configparser_delete (configparser *cp);
+void configparser_free (configparser **cp);
 
 void configparser_init_file (configparser *const cp, FILE *file, const int size, const char delimiter);
 

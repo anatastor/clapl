@@ -24,7 +24,12 @@ typedef struct
 
 
 hashtable *ht_create (const int size);
-
+/**
+ * @func
+ * @param[in] size of the hashtable
+ *
+ * \return pointer to the hashtable, NULL on failure
+ */
 
 int ht_init (hashtable *const ht, const int size);
 /**
@@ -35,8 +40,13 @@ int ht_init (hashtable *const ht, const int size);
  * \return 1 on success, 0 on failure
  */
 
-
-hashtable *ht_free (hashtable *ht);
+void ht_free (hashtable **ht);
+/**
+ * @func
+ * frees the hashtable and sets it's pointer to NULL
+ *
+ * @param[in] pointer to the pointer to a hashtable
+ */
 
 
 int ht_hash (hashtable *const ht, char *const key);

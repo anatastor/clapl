@@ -1,14 +1,17 @@
-author: Torsten Lehmann
-date:   2018-02-01
-mail:   anatas.torsten@gmx.de
+
+GNU clapl
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/license/gpl.html>
+This is free software; you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
 
 
-This is 'clapl'. (CommandLine AudioPlayer with Lyricsupport)
+Author: Torsten Lehmann
+Contact:anatas.torsten@gmx.de
 
 
 ###### CONTROLS #####
 
-Keybindings are vim like:
+vim-like keybindings
 navigating artist and album via 'j' and 'k'
 navigating tracks via 'n' (next) and 'b' (previous)
 start playing: 'p' or 'ENTER'

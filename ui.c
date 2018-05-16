@@ -6,11 +6,11 @@ void ui_init (void)
 {
     initscr();
     setlocale(LC_ALL, "de_DE"); // set local language to german -> Umlaute
-    noecho();
-    cbreak();
-    nodelay(NULL, TRUE);
-    timeout(10);
-    curs_set(0);
+    noecho(); // disabling echoing
+    cbreak(); // disabling line buffering
+    nodelay(NULL, TRUE); // causes getch() to be a non-blocking call
+    timeout(10); // 10 ms delay -> waiting for input
+    curs_set(0); // disable cursor
     refresh();
 }
 
@@ -35,7 +35,7 @@ WINDOW *win_create (const int x, const int y, const int width, const int height)
     if (! win)
         logcmd(LOG_ERROR, "ui: win_create: could not create WINDOW");
 
-    nodelay(win, TRUE);
+    nodelay(win, TRUE); // set non blocking input for each window; just to be sure
 
     wrefresh(win);
     return win;
@@ -76,7 +76,8 @@ userinterface *ui_create (sqlite3 *db, configparser *cp)
     userinterface *ui = malloc(sizeof(userinterface));
     if (! ui)
         logcmd(LOG_ERROR_MALLOC, "ui: ui_create: unable to allocate memory for ui");
-
+    
+    // check if the terminal supports colors and the config option in the config file is set
     if (has_colors() == TRUE && configparser_get_bool(cp, "enable_color"))
     {
         ui->color = 1;
@@ -88,11 +89,11 @@ userinterface *ui_create (sqlite3 *db, configparser *cp)
         init_pair(1, color, COLOR_BLACK);
     }
     else
-        ui->color = 0;
+        ui->color = 0; // color is either not supported or not set in the config file
 
     ui_createWindows(ui);
 
-    ui->c = cache_load(db);
+    ui->c = cache_load(db); // load the music library into cache
     ui->c->lyrics_path = configparser_get_string(cp, "lyrics");
     ui->c->sorting = configparser_get_string(cp, "sorting");
 
@@ -133,7 +134,7 @@ void ui_print_artist (userinterface *ui)
         return;
 
     int offset =  0;
-    if (ui->c->selectedArtist > (ARTISTWIN_HEIGHT - 4))
+    if (ui->c->selectedArtist > (ARTISTWIN_HEIGHT - 4)) // 4 because it looks best in my opinion
         offset = ui->c->selectedArtist - (ARTISTWIN_HEIGHT - 4);
 
     for (int i = 1; (i < (ARTISTWIN_HEIGHT - 2)) && (i <= ui->c->nartists); i++)
@@ -150,7 +151,6 @@ void ui_print_artist (userinterface *ui)
     }
     
     cache_entry_load_album(ui->c);
-    
     ui_print_album(ui);
 }
 
@@ -160,7 +160,7 @@ void ui_print_album (userinterface *ui)
     ui_clear_window(ui, ui->albumWin, "Album");
 
     int offset = 0;
-    if (ui->c->selectedAlbum > (ALBUMWIN_HEIGHT - 4))
+    if (ui->c->selectedAlbum > (ALBUMWIN_HEIGHT - 4)) // 4 because it looks best in my opinion
         offset = ui->c->selectedAlbum - (ALBUMWIN_HEIGHT - 4);
 
     for (int i = 1; (i < (ALBUMWIN_HEIGHT -2)) && (i <= ui->c->nalbum); i++)
@@ -174,9 +174,8 @@ void ui_print_album (userinterface *ui)
         else
             ui_print_to_window(ui->albumWin, (ALBUMWIN_WIDTH - 2), i, ui->c->album[i + offset -1].name);
     }
-
-    cache_entry_load_tracks(ui->c);
     
+    cache_entry_load_tracks(ui->c);
     ui_print_track(ui);
 }
 
@@ -186,7 +185,7 @@ void ui_print_track (userinterface *ui)
     ui_clear_window(ui, ui->trackWin, "Track");
 
     int offset = 0;
-    if (ui->c->selectedTrack > (TRACKWIN_HEIGHT - 4))
+    if (ui->c->selectedTrack > (TRACKWIN_HEIGHT - 4)) // 4 because it looks best in my opinion
         offset = ui->c->selectedTrack - (TRACKWIN_HEIGHT - 4);
 
     for (int i = 1; (i < (TRACKWIN_HEIGHT - 2)) && (i <= ui->c->ntracks); i++)
@@ -222,7 +221,7 @@ char *ui_read_line (FILE *file, const int buffer_size)
         c = getc(file);
     }
 
-    if (c == EOF && pos == 0)
+    if (c == EOF && pos == 0) // EOF reached and no line read
     {
         free(line);
         return NULL;
@@ -269,8 +268,9 @@ void ui_print_lyrics (userinterface *ui)
 
 void ui_print_info (userinterface *ui, audio *a)
 {   
-    logcmd(LOG_DMSG, "ui_print_info: executing");
     ui_clear_window(ui, ui->infoWin, NULL);
+
+    // output playstate of the track
     switch (a->playstate)
     {
         case PLAYSTATE_PLAY:
@@ -285,7 +285,8 @@ void ui_print_info (userinterface *ui, audio *a)
             mvwprintw(ui->infoWin, 1, 1, "not playing");
             break;
     }
-
+    
+    // output the current cycling option
     switch (a->cycle)
     {
         case CYCLE_ALL_ARTIST:

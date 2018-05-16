@@ -309,13 +309,10 @@ void cache_close (cache *c)
         free(c->tracks);
     }
     
-    /*
     if (c->lyrics_path)
         free(c->lyrics_path);
     if (c->sorting)
         free(c->sorting);
-    * are freed during the freeing process of the configparser
-    */
     
     if (c->commands)
         c->commands = cmd_table_free(c->commands);

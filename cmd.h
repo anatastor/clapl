@@ -10,6 +10,10 @@
 
 cmd_table *load_commands (void);
 
+/*
+ * functions return either 1 or 0
+ * the return determines if a redraw of the whole userinterface is neccessary
+ */
 
 int cmd_add (cmd_arg *args);
 int cmd_seek (cmd_arg *args);

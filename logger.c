@@ -18,6 +18,7 @@ void logcmd (const LOG_CODE code, char *fmt, ...)
 {
     if (!DEBUG_MODE && code == LOG_DMSG)
         return;
+    // do not print debugging messages
 
     fprintf(LOGGER_FILE, "[%s] ", LOG_STR[code]);
     va_list arg;

@@ -4,8 +4,8 @@
 
 void playback_init (void)
 {
-    av_register_all();
-    avcodec_register_all();
+    //av_register_all();
+    //avcodec_register_all();
     ao_initialize();
 
     av_log_set_level(AV_LOG_QUIET);
@@ -28,18 +28,16 @@ audio *audio_create (void)
 }
 
 
-audio *audio_destroy (audio *a)
+void audio_free (audio **a)
 {
-    printf("\ndestroy audio\n");
-    if (a->pb)
+    if ((*a)->pb)
     {
-        playback_free_file(a->pb);
-        free(a->pb);
+        playback_free_file((*a)->pb);
+        free((*a)->pb);
     }
 
-
-    free(a);
-    return NULL;
+    free(*a);
+    *a = NULL;
 }
 
 
@@ -202,8 +200,9 @@ void playback_seek_timestamp (playback *pb, const int time)
 
         if (avcodec_receive_frame(pb->avctx, pb->frame) < 0)
             return;
-
-        int t = av_frame_get_best_effort_timestamp(pb->frame) / pb->ctx->streams[0]->time_base.den;
+        
+        int t = pb->frame->best_effort_timestamp;
+        //int t = av_frame_get_best_effort_timestamp(pb->frame) / pb->ctx->streams[0]->time_base.den;
         if (t >= time)
             return;
     }
@@ -211,13 +210,11 @@ void playback_seek_timestamp (playback *pb, const int time)
 
 
 void playback_free_file (playback *pb)
-{   
-    printf("\ncalled\n");
+{       
+    logcmd(LOG_DMSG, "freeing playback");
     if (! pb)
         return;
 
-    printf("\nplayback_free_file\n");
-    
     av_packet_free(&pb->pkt);
     ao_close(pb->adevice);
     av_frame_free(&pb->frame);

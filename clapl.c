@@ -6,7 +6,7 @@ void load_config (configparser *cp)
 {
     // loading the configuration file
     LOGGER_FILE = stdout; 
-    chdir(getenv("HOME")); // goto /home/user/
+    chdir(getenv("HOME")); // goto the home directory
 
     int ret = mkdir(".config/clapl", 0700); // create '.config/clapl/ if it does not exits
     if (ret != 0 && ret != -1)
@@ -17,6 +17,7 @@ void load_config (configparser *cp)
     if (ret != 0) 
     { 
         fprintf(stderr, "could not load config file\ncheck ~/.config/clapl/config");
+        free(cp);
         exit(1);
     }
     
@@ -29,67 +30,42 @@ void load_config (configparser *cp)
 int main (int argc, char **argv)
 {
     srand(time(NULL));
+
     configparser *cp = malloc(sizeof(configparser));
-    load_config(cp); // load config file
+    load_config(cp);
     
-    //LOGGER_PATH = ".config/clapl/log.txt";
     LOGGER_PATH = configparser_get_string(cp, "log_file"); // set path for log file
-    LOGGER_FILE = fopen(LOGGER_PATH, "w"); // open log file
+    LOGGER_FILE = fopen(LOGGER_PATH, "w");
 
     playback_init(); // initialize libav and libao
     sqlite3 *db = db_init();
     ui_init(); // initialize userinterface
-    userinterface *ui = ui_create(db, cp); // create userinterface
+    userinterface *ui = ui_create(db, cp);
 
     ui->c->commands = load_commands();
 
     audio *a = audio_create();
-    ui_print_info(ui, a); // prints infos of the currently playing track
+    ui_print_info(ui, a);
     ui_refresh(ui);
     pthread_t thread;
 
     char ch;
-    char running = 1;
     while (1)
     {
         ch = getch();
         input(ui, ui->c, a, &thread, ch);
-        if (ch == 'q')
+        if (ch == 'q' || ch == 'Q')
             break;
     }
-    /*
-    while ((ch = getch()) != 'q') // main loop
-        input(ui, ui->c, a, &thread, ch);
-    */
-    
-    /*
-    cache_entry_load_album(ui->c);
-    cache_entry_load_tracks(ui->c);
-    */
-    /*
-    input(ui, ui->c, a, &thread, 'p');
-    input(ui, ui->c, a, &thread, 'q');
-    char running = 1;
-    char ch;
-    while (running)
-    {
-        ch = getchar();
-        getchar();
-        if (ch == 'q')
-            running = 0;
-        input(ui, ui->c, a, &thread, ch);
-    }
-    */
-
 
     endwin(); // close ncurses
-    a = audio_destroy(a);
-    configparser_delete(cp);
+    audio_free(&a);
+    configparser_free(&cp);
     cache_close(ui->c);
     free(ui);
     db_close(db);
     
-    fclose(LOGGER_FILE); // close log file
-    return 0;
+    fclose(LOGGER_FILE);
+    return EXIT_SUCCESS;
 }
 

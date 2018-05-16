@@ -7,7 +7,6 @@ void parse_command (char *command, userinterface *ui, audio *a)
     if (*command == '\0')
         return;
 
-
     char *token = strtok(command, " ");
     cmd *c = cmd_table_get(ui->c->commands, token);
     logcmd(LOG_MSG, "token = %s", token);
@@ -17,7 +16,6 @@ void parse_command (char *command, userinterface *ui, audio *a)
         logcmd(LOG_MSG, "no command found");
         return;
     }
-
 
     cmd_arg *args = cmdparser_get_args(command, c->args);
     if (strcmp(token, "seek") == 0)
@@ -114,7 +112,8 @@ void input (userinterface *ui, cache *c, audio *a, pthread_t *thread, const char
     if (ch != 'q' && a && (a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE))
     {
         int duration = a->pb->ctx->duration / AV_TIME_BASE;
-        int pos = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
+        int pos = a->pb->frame->best_effort_timestamp / a->pb->ctx->streams[0]->time_base.den;
+        //int pos = av_frame_get_best_effort_timestamp(a->pb->frame) / a->pb->ctx->streams[0]->time_base.den;
         char *spos = input_get_time(pos);
         char *sdur = input_get_time(duration);
         mvprintw(3, 2, "%s | %s", spos, sdur);

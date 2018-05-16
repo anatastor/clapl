@@ -51,18 +51,20 @@ void configparser_init (configparser *const cp, char *const file, const int size
 {
     cp->file = fopen(file, "r"); // open file
     if (! cp->file)
-        logcmd(LOG_ERROR_MALLOC, "configparser: configparser_init: could not malloc cp->file");
+        logcmd(LOG_ERROR_IO, "configparser: configparser_init: could not open config file (check ~/.config/clapl/config");
 
     cp->delimiter = delimiter;
     cp->ht = ht_create(size); // create hashtable
+    if (! cp->ht)
+        logcmd(LOG_ERROR_MALLOC, "configparser: configparser_init: hashtable could not be created");
 }
 
 
-configparser *configparser_delete (configparser *cp)
+void configparser_free (configparser **cp)
 {   
-    cp->ht = ht_free(cp->ht);
-    free(cp);
-    return NULL;
+    ht_free(&(*cp)->ht);
+    free(*cp);
+    *cp = NULL;
 }
 
 
@@ -71,6 +73,8 @@ void configparser_init_file (configparser *const cp, FILE *file, const int size,
     cp->file = file;
     cp->delimiter = delimiter;
     cp->ht = ht_create(size);
+    if (! cp->ht)
+        logcmd(LOG_ERROR_MALLOC, "configparser: configparser_init: hashtable could not be created");
 }
 
 
@@ -139,6 +143,16 @@ int configparser_get_int (configparser *const cp, char *const key)
 
 char *configparser_get_string (configparser *const cp, char *const key)
 {
-    return ht_get(cp->ht, key);
+    char *value = ht_get(cp->ht, key);
+    if (value)
+    {
+        // copies the string in to a new block of memory
+        // this way the configparser never looses its data due to unexpected memory frees
+        char *ptr = malloc(sizeof(char) * (strlen(value) + 1));
+        strcpy(ptr, value);
+        return ptr;
+    }
+
+    return NULL;
 }
 

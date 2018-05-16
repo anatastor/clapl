@@ -7,8 +7,7 @@
 #include <stdlib.h>
 
 
-#define DEBUG_MODE  1
-
+#define DEBUG_MODE 0
 
 
 FILE *LOGGER_FILE;
@@ -27,5 +26,11 @@ typedef enum
 
 
 void logcmd (const LOG_CODE code, char *fmt, ...);
+/**
+ * @func
+ * @param[in] code of the log message
+ * @param[in] format of the message, use it like printf()
+ * @param[in] ... further parameters defined by fmt
+ */
 
 #endif

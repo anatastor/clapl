@@ -16,7 +16,10 @@ hashtable *ht_create (const int size)
     if (!ht)
         return NULL;
     if (!ht_init(ht, size))
+    {
+        free(ht);
         return NULL;
+    }
     else
         return ht;
 }
@@ -36,30 +39,38 @@ int ht_init (hashtable *const ht, const int size)
 }
 
 
-void remove_entry (ht_entry *e)
+void ht_entry_free (ht_entry *e)
 {
     if (e->next)
-        remove_entry(e->next);
-    
+        ht_entry_free(e->next);
+
     if (e->key)
+    {
         free(e->key);
+        e->key = NULL;
+    }
     if (e->value)
+    {
         free(e->value);
+        e->value = NULL;
+    }
+
     free(e);
 }
 
 
-hashtable *ht_free (hashtable *ht)
+void ht_free (hashtable **ht)
 {   
-    for (int i = 0; i < ht->size; i++)
-    {   
-        ht_entry *e = ht->entries[i];
+    for (int i = 0; i < (*ht)->size; i++)
+    {
+        ht_entry *e = (*ht)->entries[i];
         if (e)
-            remove_entry(e);
+            ht_entry_free(e);
+
     }
-    free(ht->entries);
-    free(ht);
-    return NULL;
+    free((*ht)->entries);
+    free(*ht);
+    *ht = NULL;
 }
 
 

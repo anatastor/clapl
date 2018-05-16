@@ -108,7 +108,15 @@ int cmd_load (cmd_arg *args)
 int cmd_sorting (cmd_arg *args)
 {
     userinterface *ui = args[0].v;
-    ui->c->sorting = copy_string(args[1].s);
-    ui->c->selectedTrack = 0;
-    ui_print_track(ui);
+    if (strcmp(args[1].s, "number") == 0 || strcmp(args[1].s, "title") == 0)
+    {
+        free(ui->c->sorting);
+        ui->c->sorting = copy_string(args[1].s);
+        ui->c->selectedTrack = 0;
+        cache_entry_load_tracks(ui->c);
+        ui_print_track(ui);
+        ui_refresh(ui);
+    }
+
+    return 0;
 }
