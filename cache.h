@@ -6,7 +6,7 @@
 #include "logger.h"
 #include "db.h"
 
-#include "commandtable.h"
+#include "cmdmanager.h"
 
 
 typedef struct cache_entry

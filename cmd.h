@@ -2,7 +2,7 @@
 #ifndef _CMD_H_
 #define _CMD_H_
 
-#include "commandparser.h"
+#include "cmdmanager.h"
 #include "ui.h"
 #include "cache.h"
 #include "playback.h"

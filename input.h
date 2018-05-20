@@ -11,7 +11,7 @@
 #include "logger.h"
 #include "playback.h"
 #include "ui.h"
-#include "commandparser.h"
+#include "cmdmanager.h"
 
 
 void *playbackThread (void *vargp);

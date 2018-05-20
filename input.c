@@ -17,7 +17,7 @@ void parse_command (char *command, userinterface *ui, audio *a)
         return;
     }
 
-    cmd_arg *args = cmdparser_get_args(command, c->args);
+    cmd_arg *args = cmd_parser_get_args(c->args);
     if (strcmp(token, "seek") == 0)
         args[0].v = a;
     else
