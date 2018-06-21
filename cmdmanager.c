@@ -134,50 +134,76 @@ cmd_table_get (cmd_table *table, char *key)
 }
 
 
+void
+cmd_parser_get_arg_string (cmd_arg *arg)
+{   
+    char delim = '\"';
+    char *token = strtok (NULL, &delim);
+    token = strtok (NULL, &delim);
+
+    arg->s = token;
+}
+
+
+char *
+cmd_parser_get_token (const char args)
+{   
+    char *token = NULL;
+
+    if (args == 's')
+        token = strtok (NULL, "\"");
+    else
+        token = strtok (NULL, DELIM);
+
+    return token;
+}
+
+
 cmd_arg *
 cmd_parser_get_args (const char *args_s)
 {   
-    char *token = strtok (NULL, DELIM);
     int i = 0;
     int size = strlen (args_s);
     cmd_arg *args = calloc (size, sizeof(cmd_arg));
-    
-    if (args)
+
+    for (int i = 0; i < size; i++)
     {
-        for (int i = 0; i < size && token; i++)
-        {   
-            printf("\ni: %i\ntoken: %s\narg: %c\n", i, token, args_s[i]);
-            switch (args_s[i])
-            {
-                case 'i':
-                    args[i].i = atoi (token);
-                    printf("\narg.i: %i\n", args[i].i);
-                    break;
-    
-                case 'd':
-                    args[i].d = atof (token);
-                    break;
-    
-                case 'c':
-                    args[i].c = token[0];
-                    break;
-    
-                case 's':
-                    args[i].s = token;
-                    break;
-    
-                case 'v':
-                    continue;
-                    break;
-    
-                default:
-                    continue;
-                    break;
-            }
-    
-            token = strtok (NULL, " \0");
+        if (args_s[i] == 'v')
+            continue;
+
+
+        char *token = cmd_parser_get_token (args_s[i]);
+        if (token == NULL)
+            break;
+
+        switch (args_s[i])
+        {
+            case 'i':
+                args[i].i = atoi (token);
+                break;
+
+            case 'd':
+                args[i].d = atof (token);
+                break;
+
+            case 'c':
+                args[i].c = token[0];
+                break;
+
+            case 's':
+                args[i].s = token;
+                break;
+
+            case 'v':
+                continue;
+                break;
+
+            default:
+                continue;
+                break;
         }
     }
+
     return args;
 }
 

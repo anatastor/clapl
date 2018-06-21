@@ -11,6 +11,7 @@ void parse_command (char *command, userinterface *ui, audio *a)
     cmd *c = cmd_table_get(ui->c->commands, token);
     logcmd(LOG_MSG, "token = %s", token);
     logcmd(LOG_MSG, "command = %s", command);
+
     if (!c)
     {
         logcmd(LOG_MSG, "no command found");

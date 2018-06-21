@@ -315,7 +315,7 @@ void cache_close (cache *c)
         free(c->sorting);
     
     if (c->commands)
-        c->commands = cmd_table_free(c->commands);
+        cmd_table_free(&c->commands);
 
     free(c);
 }
