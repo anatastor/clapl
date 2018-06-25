@@ -201,7 +201,7 @@ void playback_seek_timestamp (playback *pb, const int time)
         if (avcodec_receive_frame(pb->avctx, pb->frame) < 0)
             return;
         
-        int t = pb->frame->best_effort_timestamp;
+        int t = pb->frame->best_effort_timestamp / pb->ctx->streams[0]->time_base.den;
         //int t = av_frame_get_best_effort_timestamp(pb->frame) / pb->ctx->streams[0]->time_base.den;
         if (t >= time)
             return;

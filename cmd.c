@@ -60,6 +60,7 @@ int
 cmd_seek (cmd_arg *args)
 {
     audio *a = args[0].v;
+    
     if (a && a->threadstate == THREADSTATE_RUNNING || a->threadstate == THREADSTATE_PAUSE)
     {
         int timestamp = args[1].i;
